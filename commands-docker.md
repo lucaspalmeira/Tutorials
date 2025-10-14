@@ -1,5 +1,6 @@
-## Docker compose commands
-> https://docs.docker.com/compose/reference/
+# Docker commands
+
+## Comandos básicos
 
 ### Listar as imagens
 
@@ -74,7 +75,7 @@ docker volume inspect mongo-data
 docker volume rm mongo-data
 ```
 
-### Backup
+## Backup (MongoDB)
 Backup Usando ```mongodump``` diretamente do host
 ```bash
 sudo mongodump --uri="mongodb://172.17.0.2:27017/gh32" --out ./backup
@@ -114,3 +115,68 @@ Executando o mongorestore para restaurar o backup
 ```bash
 mongorestore --db gh32 /backup
 ```
+
+## Limpeza de Containers, Volumes e Redes no Docker
+
+Comandos úteis para remover containers, volumes e redes **não utilizados**, ajudando a manter o ambiente Docker limpo e eficiente.
+
+### 1. Remover apenas containers parados
+
+Remove **somente** containers que não estão em execução.
+
+```bash
+docker container prune
+```
+
+Para executar sem confirmação interativa:
+
+```bash
+docker container prune -f
+```
+
+### 2. Remover todos os containers (inclusive ativos)
+
+```bash
+docker rm -f $(docker ps -aq)
+```
+
+**Atenção**: esse comando para e remove tudo.
+Use apenas se quiser limpar completamente os containers.
+
+### 3. Limpar containers, redes e volumes não utilizados
+
+Remove:
+
+Containers **parados**
+
+**Redes** que não estão em uso
+
+**Volumes órfãos** (não associados a nenhum container)
+
+**Caches** de build
+
+```bash
+docker system prune --volumes
+```
+
+Para executar sem confirmação
+
+```bash
+docker system prune --volumes -f
+```
+
+**Não remove imagens.**
+É o comando ideal para uma limpeza segura e completa de containers e recursos inativos.
+
+
+### 4. Limpeza total (containers + imagens + volumes + redes)
+
+**Remove tudo que não está sendo usado** — inclusive **imagens** que não estão associadas a nenhum container.
+
+```bash
+docker system prune -a --volumes
+```
+
+
+## Docker compose commands
+> https://docs.docker.com/compose/reference/
