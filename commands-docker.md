@@ -41,15 +41,16 @@ docker run -it --name nome-do-conteiner app
 ### Acessar o shell de um contêiner Docker em execução
 
 ```bash
-docker exec -it -u root id-do-conteiner sh
+docker exec -it -u root id-do-conteiner bash
 ```
 
 ### Inicia um contêiner interativo a partir da imagem app e abre um shell (sh) dentro do contêiner
 
 ```bash
-sudo docker run -it app sh
+sudo docker run -it app bash
 ```
 ### Construir a imagem antes de executar o conteiner em segundo plano (flag -d)
+
 ```bash
 docker-compose up --build -d
 ```
@@ -67,12 +68,18 @@ docker volume ls
 
 ### Inspecionar volume
 ```bash
-docker volume inspect mongo-data
+docker volume inspect nome-do-conteiner
+```
+
+### Ver volumes montados em um container específico
+
+```bash
+docker inspect nome-do-conteiner | grep -A 10 -B 10 Mount
 ```
 
 ### Apagar volume
 ```bash
-docker volume rm mongo-data
+docker volume rm nome-do-conteiner
 ```
 
 ## Backup (MongoDB)
