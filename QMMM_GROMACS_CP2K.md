@@ -69,10 +69,10 @@ gmx grompp -f step6_qmmm.mdp -o step6_qmmm.tpr -c step4.1_equilibration.gro -t s
 # Execução (escolha uma das opções)
 
 # Opção A – uma única RTX 4090 (mais simples e estável)
-gmx mdrun -v -deffnm step6_qmmm -gpu_id 0 -ntomp 28
+gmx mdrun -v -deffnm step6_qmmm -gpu_id 0 -ntomp 14
 
 # Opção B – duas RTX 4090 (mais rápido se CP2K foi compilado com CUDA+DBCSR_ACC)
-# mpirun -np 2 gmx_mpi mdrun -deffnm step6_qmmm -ntomp 14 -gpu_id 01
+mpirun -np 2 gmx_mpi mdrun -deffnm step6_qmmm -ntomp 14 -gpu_id 01
 ```
 
 Continuar uma simulação interrompida
