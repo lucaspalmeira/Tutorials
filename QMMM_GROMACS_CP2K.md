@@ -43,19 +43,19 @@ gmx grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_
 gmx mdrun -v -deffnm step4.1_equilibration -gpu_id 0
 ```
 
-3. Arquivo .mdp da produção QM/MM (step6_qmmm.mdp)
+3. Arquivo .mdp da produção QM/MM (step5_production.mdp)
+
+Adicione as seguintes linhas ao final do arquivo 'step5_production.mdp'
 
 ```
-; Copie TODAS as linhas de tcoupl, pcoupl, vdw, PME, etc. do seu step5_production.mdp
-; (são exatamente as mesmas do CHARMM-GUI)
-
-; ==================== QM/MM com CP2K ====================
+... Linhas anteriores presentes no step5_production.mdp
+; CP2K QMMM parameters
 qmmm-cp2k-active        = yes
-qmmm-cp2k-qmgroup       = QMatoms
+qmmm-cp2k-qmgroup       = QMatoms ; Index group of QM atoms
+qmmm-cp2k-qmmethod      = PBE
 qmmm-cp2k-qmcharge      = 0
 qmmm-cp2k-qmmultiplicity = 1
-qmmm-cp2k-qmmethod      = PBE               ; padrão rápido e robusto
-; qmmm-cp2k-qmmethod    = INPUT             ; descomente + use -qmi se quiser input CP2K customizado
+;
 ```
 
 4. Executar a produção QM/MM
@@ -64,15 +64,15 @@ qmmm-cp2k-qmmethod      = PBE               ; padrão rápido e robusto
 # Escolher GPU 0 ou 1
 export CUDA_VISIBLE_DEVICES=0   # ou 1
 
-gmx grompp -f step6_qmmm.mdp -o step6_qmmm.tpr -c step4.1_equilibration.gro -t step4.1_equilibration.cpt -p topol.top -n index.ndx
+gmx grompp -f step5_production.mdp -o step5_production.tpr -c step4.1_equilibration.gro -t step4.1_equilibration.cpt -p topol.top -n index.ndx
 
 # Execução (escolha uma das opções)
 
 # Opção A – uma única RTX 4090 (mais simples e estável)
-gmx mdrun -v -deffnm step6_qmmm -gpu_id 0 -ntomp 14
+gmx mdrun -v -deffnm step5_production -gpu_id 0 -ntomp 14
 
 # Opção B – duas RTX 4090 (mais rápido se CP2K foi compilado com CUDA+DBCSR_ACC)
-mpirun -np 2 gmx_mpi mdrun -deffnm step6_qmmm -ntomp 14 -gpu_id 01
+mpirun -np 2 gmx_mpi mdrun -deffnm step5_production -ntomp 14 -gpu_id 01
 ```
 
 Continuar uma simulação interrompida
