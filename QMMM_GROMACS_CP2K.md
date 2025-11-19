@@ -80,3 +80,40 @@ Continuar uma simulação interrompida
 ```bash
 gmx mdrun -v -deffnm step6_qmmm -cpi step6_qmmm.cpt -gpu_id 0
 ```
+
+
+### Executar Conteiner
+```bash
+docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+```
+
+```bash
+docker run -itd --gpus '"device=1"' -v /home/lucas/MD:/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+```
+
+A flag '-v' para montar a pasta local /home/lucas/MD dentro do container em /workspace
+
+#### Verificar o uso de GPU
+```bash
+docker exec gmx_cp2k bash
+nvidia-smi
+```
+
+#### Minimização
+
+```bash
+docker exec gmx_cp2k gmx grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx
+docker exec gmx_cp2k gmx mdrun -v -deffnm step4.0_minimization
+```
+
+#### Equilíbrio
+```bash
+docker exec gmx_cp2k gmx grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_minimization.gro -r step3_input.gro -p topol.top -n index.ndx
+docker exec gmx_cp2k gmx mdrun -v -deffnm step4.1_equilibration
+```
+
+#### Produção
+```bash
+docker exec gmx_cp2k gmx grompp -f step5_production.mdp -c eq2.gro -p topol.top -n index.ndx -o step5_production.tpr
+docker exec gmx_cp2k gmx mdrun -deffnm step5_production -nb gpu
+```
