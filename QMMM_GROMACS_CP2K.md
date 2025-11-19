@@ -114,6 +114,6 @@ docker exec gmx_cp2k gmx mdrun -v -deffnm step4.1_equilibration
 
 #### Produção
 ```bash
-docker exec gmx_cp2k gmx grompp -f step5_production.mdp -c eq2.gro -p topol.top -n index.ndx -o step5_production.tpr
+docker exec gmx_cp2k gmx grompp -f step5_production.mdp -c step4.1_equilibration.gro -p topol.top -n index.ndx -o step5_production.tpr
 docker exec gmx_cp2k gmx mdrun -deffnm step5_production -nb gpu
 ```
