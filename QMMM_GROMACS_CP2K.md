@@ -88,7 +88,7 @@ docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
 ```
 
 ```bash
-docker run -itd --gpus '"device=1"' -v /home/lucas/MD:/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+docker run -itd --gpus '"device=1"' -v $(pwd):/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
 ```
 
 A flag '-v' para montar a pasta local /home/lucas/MD dentro do container em /workspace
