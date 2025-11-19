@@ -21,7 +21,7 @@ r 603 | r 604
 r 39 | r 57 | r 96 | r 97 | r 166 | r 167 | r 246 | r 247
 
 # 8 águas selecionadas
-resnr 12630 | resnr 12642 | resnr 12647 | resnr 12657 | resnr 12659 | resnr 12668 | resnr 12688 | resnr 12689
+r 12630 | r 12642 | r 12647 | r 12657 | r 12659 | r 12668 | r 12688 | r 12689
 
 # Junta tudo num único grupo
 0 | 1 | 2
