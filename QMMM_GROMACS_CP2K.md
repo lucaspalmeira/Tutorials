@@ -1,119 +1,160 @@
-# Simulação QM/MM (GROMACS 2021.3 + CP2K)
+# Simulação QM/MM com GROMACS 2021.3 + CP2K
 
-**Região QM (224 átomos):**
-- Ligante: resíduos 603 (AGLC) + 604 (BFRU)
-- Resíduos da proteína: 39 (ASP), 57 (LEU), 96 (PHE), 97 (ASP), 166 (ALA), 167 (PHE), 246 (GLU), 247 (THR)
-- 8 moléculas de água: 12630, 12642, 12647, 12657, 12659, 12668, 12688, 12689
+Este protocolo descreve como configurar e executar uma simulação QM/MM usando GROMACS (2021.3) acoplado ao CP2K, com a região quântica (QM) composta por:
 
-### 1. Criar o grupo de índice QM (QMatoms) – FAZER SÓ UMA VEZ
+**Região QM:**
+- Ligantes: resíduos 603 (glucose, AGLC) e 604 (frutose, BFRU) – sacarose
+- Resíduos da proteína próximos ao sítio ativo: 64 (ASP), 82 (LEU), 121 (PHE), 122 (ASP), 193 (ARG), 194 (HIS), 271 (GLU), 272 (THR)
+- Moléculas de água dentro de 4 Å do ligante (serão restritas positionalmente durante minimização e equilíbrio)
+
+## 1. Criação do grupo de índice QM (QMatoms)
+
+### 1.1 Criar grupos básicos no index.ndx
 
 ```bash
-gmx make_ndx -f step3_input.gro -o index.ndx
+gmx make_ndx -f step3_input.gro -n index.ndx
 ```
 
-No prompt interativo >, cole exatamente estas linhas, uma por uma (Enter após cada uma):
+Dentro do make_ndx, execute os seguintes comandos:
 
-```
-# Ligante completo (cadeia do ligante, resíduos 603 e 604)
+```bash
+# Ligante completo (sacarose)
 r 603 | r 604
+name 4 LIG
 
-# Resíduos da proteína
-r 39 | r 57 | r 96 | r 97 | r 166 | r 167 | r 246 | r 247
+# Resíduos da proteína do sítio ativo
+r 64 | r 82 | r 121 | r 122 | r 193 | r 194 | r 271 | r 272
+name 5 residuos_sitio
 
-# 8 águas selecionadas
-r 12893 | r 12910 | r 16456 | r 17118 | r 17223 | r 17229 | r 17305 | r 17311
-
-# Junta tudo num único grupo
-0 | 1 | 2
-
-# Nomeia o grupo QM
-name 3 QMatoms
-
-# Sai e salva
 q
 ```
 
-2. Minimização + Equilibração clássica (igual ao CHARMM-GUI)
+### 1.2 Selecionar oxigênios de água dentro de 4 Å do ligante
 
 ```bash
-gmx grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx -maxwarn 1
-gmx mdrun -v -deffnm step4.0_minimization -gpu_id 0
-
-gmx grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_minimization.gro -r step3_input.gro -p topol.top -n index.ndx
-gmx mdrun -v -deffnm step4.1_equilibration -gpu_id 0
+gmx select -f step3_input.gro -s step4.0_minimization.tpr -select "name OH2 and (within 0.4 of group AGLC or within 0.4 of group BFRU)" -on wat_oxygens_near_lig.ndx
 ```
 
-3. Arquivo .mdp da produção QM/MM (step5_production.mdp)
-
-Adicione as seguintes linhas ao final do arquivo 'step5_production.mdp'
+O arquivo `wat_oxygens_near_lig.ndx` conterá algo como:
 
 ```
-... Linhas anteriores presentes no step5_production.mdp
-; CP2K QMMM parameters
-qmmm-cp2k-active        = yes
-qmmm-cp2k-qmgroup       = QMatoms ; Index group of QM atoms
-qmmm-cp2k-qmmethod      = PBE
-qmmm-cp2k-qmcharge      = 0
+[ name_OH2_and_(within_0.4_of_group_AGLC_or_within_0.4_of_group_BFRU)_f0_t0.000 ]
+44346 45525 45690 45726 45741 56379 58365 58665 58680 58698 58755 58926 58929 58944
+```
+
+### 1.3 Identificar os números dos resíduos de água (usando PyMOL)
+
+Abra o arquivo `step3_input.gro` no PyMOL e execute no console:
+
+```python
+residuos = []
+iterate (index 44346 or index 45525 or index 45690 or index 45726 or index 45741 or index 56379 or index 58365 or index 58665 or index 58680 or index 58698 or index 58755 or index 58926 or index 58929 or index 58944), residuos.append(resi)
+
+residuos_unicos = sorted(list(set(residuos)))
+print(residuos_unicos)
+cmd.select("waters_near_lig", "resi " + "+".join(map(str, residuos_unicos)))
+```
+
+Anote os números dos resíduos de água (exemplo fictício abaixo).
+
+### 1.4 Adicionar águas próximas ao index.ndx
+
+```bash
+gmx make_ndx -f step3_input.gro -n index.ndx
+```
+
+Dentro do make_ndx:
+
+```bash
+# Exemplo com os resíduos reais obtidos no PyMOL
+r 12445 | r 12838 | r 12893 | r 12905 | r 12910 | r 16456 | r 17118 | r 17218 | r 17223 | r 17229 | r 17248 | r 17305 | r 17306 | r 17311
+name 6 WAT_4A
+```
+
+# Grupo final QM: ligante + resíduos do sítio + águas próximas
+
+```bash
+4 | 5 | 6
+name 7 QMatoms
+
+q
+```
+
+## 2. Restrição posicional das águas próximas ao ligante (apenas minimização e equilíbrio)
+
+Nos arquivos `.mdp` de **minimização** e **equilíbrio** (`step4.0_minimization.mdp` e `step4.1_equilibration.mdp`), adicione:
+
+```mdp
+; Restringir águas próximas ao ligante (evita que saiam da região QM)
+pull                     = yes
+pull-ngroups             = 2
+pull-ncoords             = 1
+pull-group1-name         = WAT_4A      ; grupo criado acima
+pull-group2-name         = LIG
+pull-coord1-type         = constraint
+pull-coord1-geometry     = direction
+pull-coord1-groups       = 1 2
+pull-coord1-dim          = Y Y Y
+pull-coord1-start        = yes
+pull-coord1-rate         = 0
+pull-coord1-k            = 1000        ; kJ mol⁻¹ nm⁻²
+```
+
+**Importante:** Remova essas linhas do arquivo `step5_production.mdp` (não queremos restrição durante a produção).
+
+## 3. Parâmetros QM/MM (adicionar em todos os .mdp: minimização, equilíbrio e produção)
+
+No final de cada arquivo `.mdp`:
+
+```mdp
+; Parâmetros QM/MM com CP2K
+qmmm-cp2k-active         = yes
+qmmm-cp2k-qmgroup        = QMatoms
+qmmm-cp2k-qmmethod       = PBE
+qmmm-cp2k-qmcharge       = 0
 qmmm-cp2k-qmmultiplicity = 1
-;
+qmmm-cp2k-core           = auto
 ```
 
-4. Executar a produção QM/MM
+## 4. Execução com Docker (GROMACS + CP2K + GPU)
 
 ```bash
-# Escolher GPU 0 ou 1
-export CUDA_VISIBLE_DEVICES=0   # ou 1
-
-gmx grompp -f step5_production.mdp -o step5_production.tpr -c step4.1_equilibration.gro -t step4.1_equilibration.cpt -p topol.top -n index.ndx
-
-# Execução (escolha uma das opções)
-
-# Opção A – uma única RTX 4090 (mais simples e estável)
-gmx mdrun -v -deffnm step5_production -gpu_id 0 -ntomp 14
-
-# Opção B – duas RTX 4090 (mais rápido se CP2K foi compilado com CUDA+DBCSR_ACC)
-mpirun -np 2 gmx_mpi mdrun -deffnm step5_production -ntomp 14 -gpu_id 01
-```
-
-Continuar uma simulação interrompida
-
-```bash
-gmx mdrun -v -deffnm step6_qmmm -cpi step6_qmmm.cpt -gpu_id 0
-```
-
-
-### Executar Conteiner
-```bash
+# Baixar imagem
 docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+
+# Iniciar container (ajuste o caminho local e a GPU conforme necessário)
+docker run -itd --gpus '"device=1"' -v /home/usuario/seu_projeto:/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+
+# Verificar GPU dentro do container
+docker exec gmx_cp2k nvidia-smi
 ```
 
-```bash
-docker run -itd --gpus '"device=1"' -v $(pwd):/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
-```
-
-A flag '-v' para montar a pasta local /home/lucas/MD dentro do container em /workspace
-
-#### Verificar o uso de GPU
-```bash
-docker exec gmx_cp2k bash
-nvidia-smi
-```
-
-#### Minimização
+### 4.1 Minimização
 
 ```bash
 docker exec gmx_cp2k gmx grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx
+
 docker exec gmx_cp2k gmx mdrun -v -deffnm step4.0_minimization
 ```
 
-#### Equilíbrio
+### 4.2 Equilíbrio
+
 ```bash
 docker exec gmx_cp2k gmx grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_minimization.gro -r step3_input.gro -p topol.top -n index.ndx
+
 docker exec gmx_cp2k gmx mdrun -v -deffnm step4.1_equilibration
 ```
 
-#### Produção
+### 4.3 Produção
+
 ```bash
 docker exec gmx_cp2k gmx grompp -f step5_production.mdp -c step4.1_equilibration.gro -p topol.top -n index.ndx -o step5_production.tpr
+
 docker exec gmx_cp2k gmx mdrun -deffnm step5_production -nb gpu
+```
+
+### 4.4 Continuar simulação interrompida
+
+```bash
+docker exec gmx_cp2k gmx mdrun -v -deffnm step5_production -cpi step5_production.cpt -nb gpu
 ```
