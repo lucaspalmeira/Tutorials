@@ -141,6 +141,10 @@ Para acessar o conteiner e realizar todas as etapas seguinte da dinâmica molecu
 sudo docker exec -it gmx_cp2k bash
 ```
 
+```bash
+cd home
+```
+
 A seguir, execute:
 
 ```bash
