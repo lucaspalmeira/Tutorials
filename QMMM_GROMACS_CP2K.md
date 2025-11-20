@@ -138,8 +138,10 @@ docker exec gmx_cp2k nvidia-smi
 Para acessar o conteiner e realizar todas as etapas seguinte da dinâmica molecular, execute:
 
 ```bash
-docker exec gmx_cp2k bash
+sudo docker exec -it gmx_cp2k bash
 ```
+
+A seguir, execute:
 
 ```bash
 gmx_mpi_d grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx
