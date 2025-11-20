@@ -135,30 +135,36 @@ docker exec gmx_cp2k nvidia-smi
 
 ### 4.1 Minimização
 
-```bash
-docker exec gmx_cp2k gmx_mpi_d grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx
+Para acessar o conteiner e realizar todas as etapas seguinte da dinâmica molecular, execute:
 
-docker exec gmx_cp2k gmx_mpi_d mdrun -v -deffnm step4.0_minimization
+```bash
+docker exec gmx_cp2k bash
+```
+
+```bash
+gmx_mpi_d grompp -f step4.0_minimization.mdp -o step4.0_minimization.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx
+
+gmx_mpi_d mdrun -v -deffnm step4.0_minimization
 ```
 
 ### 4.2 Equilíbrio
 
 ```bash
-docker exec gmx_cp2k gmx_mpi_d grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_minimization.gro -r step3_input.gro -p topol.top -n index.ndx
+gmx_mpi_d grompp -f step4.1_equilibration.mdp -o step4.1_equilibration.tpr -c step4.0_minimization.gro -r step3_input.gro -p topol.top -n index.ndx
 
-docker exec gmx_cp2k gmx_mpi_d mdrun -v -deffnm step4.1_equilibration
+gmx_mpi_d mdrun -v -deffnm step4.1_equilibration
 ```
 
 ### 4.3 Produção
 
 ```bash
-docker exec gmx_cp2k gmx_mpi_d grompp -f step5_production.mdp -c step4.1_equilibration.gro -p topol.top -n index.ndx -o step5_production.tpr
+gmx_mpi_d grompp -f step5_production.mdp -c step4.1_equilibration.gro -p topol.top -n index.ndx -o step5_production.tpr
 
-docker exec gmx_cp2k gmx_mpi_d mdrun -deffnm step5_production -nb gpu -gpu_id 0
+gmx_mpi_d mdrun -deffnm step5_production -nb gpu -gpu_id 0
 ```
 
 ### 4.4 Continuar simulação interrompida
 
 ```bash
-docker exec gmx_cp2k gmx_mpi_d mdrun -v -deffnm step5_production -cpi step5_production.cpt -nb gpu -gpu_id 0
+gmx_mpi_d mdrun -v -deffnm step5_production -cpi step5_production.cpt -nb gpu -gpu_id 0
 ```
