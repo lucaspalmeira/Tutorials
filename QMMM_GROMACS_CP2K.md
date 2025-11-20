@@ -5,7 +5,9 @@ Este protocolo descreve como configurar e executar uma simulação QM/MM usando 
 **Região QM:**
 - Ligantes: resíduos 603 (glucose, AGLC) e 604 (frutose, BFRU) – sacarose
 - Resíduos da proteína próximos ao sítio ativo: 64 (ASP), 82 (LEU), 121 (PHE), 122 (ASP), 193 (ARG), 194 (HIS), 271 (GLU), 272 (THR)
-- Moléculas de água dentro de 4 Å do ligante (serão restritas positionalmente durante minimização e equilíbrio)
+- Moléculas de água num raio de 4 Å em volta do ligante (serão restritas posicionalmente durante minimização e equilíbrio).
+
+**Nota**: Para este tutorial, o complexo **proteína + ligante** deverá ser preparado no **CHARMM-GUI**, onde deverá usar o módulo `Solution Builder` para checar o $pKa$, aplicar o pH, utilizar uma caixa retangular (octaédrica tem causado o erro de sobreposição de átomos - `atom overlap`), adicionar íons (**NaCl**), utilizar o campo de força `CHARMM36` e por fim verificar a **temperatura** desejada para as etapas de equilíbrio e produção.
 
 ## 1. Criação do grupo de índice QM (QMatoms)
 
@@ -100,7 +102,7 @@ pull-coord1-rate         = 0
 pull-coord1-k            = 1000        ; kJ mol⁻¹ nm⁻²
 ```
 
-**Importante:** Remova essas linhas do arquivo `step5_production.mdp` (não queremos restrição durante a produção).
+**Importante:** Essas linhas não devem contar no arquivo `step5_production.mdp` (não queremos restrição durante a produção).
 
 ## 3. Parâmetros QM/MM (adicionar em todos os .mdp: minimização, equilíbrio e produção)
 
