@@ -122,14 +122,16 @@ qmmm-cp2k-core           = auto
 
 ```bash
 # Baixar imagem
-docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+sudo docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
 
 # Iniciar container (ajuste o caminho local e a GPU conforme necessário)
-nvidia-docker run -v "$(pwd):/home" -v "/etc/localtime:/etc/localtime:ro" -e TZ=America/Sao_Paulo -v "/tmp/.X11-unix:/tmp/.X11-unix" -e QT_X11_NO_MITSHM=1 --shm-size=1g --env="DISPLAY" --net=host --gpus all --privileged -itd --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda /bin/bash
+sudo docker run -v "$(pwd):/home" -v "/etc/localtime:/etc/localtime:ro" -e TZ=America/Sao_Paulo -v "/tmp/.X11-unix:/tmp/.X11-unix" -e QT_X11_NO_MITSHM=1 --shm-size=1g --env="DISPLAY" --net=host --gpus '"device=1"' --privileged -itd --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda /bin/bash
 
 # Verificar GPU dentro do container
 docker exec gmx_cp2k nvidia-smi
 ```
+
+**Nota:** altere '"device=1"' de acordo com a GPU disponível.
 
 ### 4.1 Minimização
 
