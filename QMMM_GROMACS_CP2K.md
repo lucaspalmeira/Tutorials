@@ -123,7 +123,7 @@ qmmm-cp2k-core           = auto
 docker pull kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
 
 # Iniciar container (ajuste o caminho local e a GPU conforme necessário)
-docker run -itd --gpus '"device=1"' -v /home/usuario/seu_projeto:/workspace --workdir /workspace --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda
+nvidia-docker run -v "$(pwd):/home" -v "/etc/localtime:/etc/localtime:ro" -e TZ=America/Sao_Paulo -v "/tmp/.X11-unix:/tmp/.X11-unix" -e QT_X11_NO_MITSHM=1 --shm-size=1g --env="DISPLAY" --net=host --gpus all --privileged -itd --name gmx_cp2k kimjoochan/gromacs-cp2k:2022.2-9.1-cuda /bin/bash
 
 # Verificar GPU dentro do container
 docker exec gmx_cp2k nvidia-smi
@@ -150,11 +150,11 @@ docker exec gmx_cp2k gmx mdrun -v -deffnm step4.1_equilibration
 ```bash
 docker exec gmx_cp2k gmx grompp -f step5_production.mdp -c step4.1_equilibration.gro -p topol.top -n index.ndx -o step5_production.tpr
 
-docker exec gmx_cp2k gmx mdrun -deffnm step5_production -nb gpu
+docker exec gmx_cp2k gmx mdrun -deffnm step5_production -nb gpu -gpu_id 0
 ```
 
 ### 4.4 Continuar simulação interrompida
 
 ```bash
-docker exec gmx_cp2k gmx mdrun -v -deffnm step5_production -cpi step5_production.cpt -nb gpu
+docker exec gmx_cp2k gmx mdrun -v -deffnm step5_production -cpi step5_production.cpt -nb gpu -gpu_id 0
 ```
