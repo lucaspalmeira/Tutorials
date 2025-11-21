@@ -20,13 +20,13 @@ gmx make_ndx -f step3_input.gro -n index.ndx
 Dentro do make_ndx, execute os seguintes comandos:
 
 ```bash
-# Ligante completo (sacarose)
-r 603 | r 604
+# Átomos selecionados do ligante que fazem parte da reação (sacarose)
+a 9068 | a 9090 | a 9066 | a 9098 | a 9099 | a 9100 | a 9101 | a 9102 | a 9067
 name 4 LIG
 
-# Resíduos da proteína do sítio ativo
-r 64 | r 82 | r 121 | r 122 | r 193 | r 194 | r 271 | r 272
-name 5 residuos_sitio
+# Átomos da proteína do sítio ativo
+a 596 | a 597 | a 598 | a 3728 | a 3729 | a 3730 | a 3731
+name 5 atomos_sitio
 
 q
 ```
@@ -45,7 +45,7 @@ O arquivo `wat_oxygens_near_lig.ndx` conterá algo como:
 
 ```
 [ name_OH2_and_(within_0.4_of_group_AGLC_or_within_0.4_of_group_BFRU)_f0_t0.000 ]
-44346 45525 45690 45726 45741 56379 58365 58665 58680 58698 58755 58926 58929 58944
+44331 45630 45666 45681 56370 58383 58677 58692 58710 58767 58947 58965
 ```
 
 ### 1.3 Identificar os números dos resíduos de água (usando PyMOL)
@@ -73,7 +73,7 @@ Dentro do make_ndx:
 
 ```bash
 # Exemplo com os resíduos reais obtidos no PyMOL
-r 12445 | r 12838 | r 12893 | r 12905 | r 12910 | r 16456 | r 17118 | r 17218 | r 17223 | r 17229 | r 17248 | r 17305 | r 17306 | r 17311
+r 12439 | r 12872 | r 12884 | r 12889 | r 16452 | r 17123 | r 17221 | r 17226 | r 17232 | r 17251 | r 17311 | r 17317
 name 6 WAT_4A
 ```
 
