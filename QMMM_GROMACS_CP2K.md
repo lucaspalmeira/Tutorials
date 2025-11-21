@@ -35,6 +35,8 @@ q
 
 ```bash
 gmx select -f step3_input.gro -s step4.0_minimization.tpr -select "name OH2 and (within 0.4 of group AGLC or within 0.4 of group BFRU)" -on wat_oxygens_near_lig.ndx
+
+gmx select -f structure.gro -s structure.gro -select "resname SOL and same residue as (atomname OW and within 0.5 of resnr 246)" -on near246
 ```
 
 O arquivo `wat_oxygens_near_lig.ndx` conterá algo como:
