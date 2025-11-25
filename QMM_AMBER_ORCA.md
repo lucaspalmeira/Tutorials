@@ -30,14 +30,7 @@ grep -q "FC" dihe.restraint && sed -e "s/FC/1.0/g" dihe.restraint > step4.0_mini
 ### **Rodar a minimização:**
 
 ```bash
-sander -O \
- -i step4.0_minimization.mdin \
- -p step3_input.parm7 \
- -c step3_input.rst7 \
- -o step4.0_minimization.mdout \
- -r step4.0_minimization.rst7 \
- -inf step4.0_minimization.mdinfo \
- -ref step3_input.rst7
+sander -O -i step4.0_minimization.mdin -p step3_input.parm7 -c step3_input.rst7 -o step4.0_minimization.mdout -r step4.0_minimization.rst7 -inf step4.0_minimization.mdinfo -ref step3_input.rst7
 ```
 
 ### Se quiser rodar em GPU:
@@ -59,15 +52,7 @@ sed -e "s/FC/1.0/g" dihe.restraint > step4.1_equilibration.rest
 ### **Rodar a equilibração:**
 
 ```bash
-sander -O \
- -i step4.1_equilibration.mdin \
- -p step3_input.parm7 \
- -c step4.0_minimization.rst7 \
- -o step4.1_equilibration.mdout \
- -r step4.1_equilibration.rst7 \
- -inf step4.1_equilibration.mdinfo \
- -ref step3_input.rst7 \
- -x step4.1_equilibration.nc
+sander -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_minimization.rst7 -o step4.1_equilibration.mdout -r step4.1_equilibration.rst7 -inf step4.1_equilibration.mdinfo -ref step3_input.rst7 -x step4.1_equilibration.nc
 ```
 
 ### GPU:
@@ -81,27 +66,13 @@ pmemd.cuda -O ...
 # 3. PRODUÇÃO
 
 ```bash
-sander -O \
- -i step5_production.mdin \
- -p step3_input.parm7 \
- -c step4.1_equilibration.rst7 \
- -o step5.mdout \
- -r step5.rst7 \
- -inf step5.mdinfo \
- -x step5.nc
+sander -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
 ```
 
 ### Para executar em GPU (recomendado):
 
 ```bash
-pmemd.cuda -O \
- -i step5_production.mdin \
- -p step3_input.parm7 \
- -c step4.1_equilibration.rst7 \
- -o step5.mdout \
- -r step5.rst7 \
- -inf step5.mdinfo \
- -x step5.nc
+pmemd.cuda -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
 ```
 
 ---
