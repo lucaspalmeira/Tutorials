@@ -19,7 +19,7 @@ Se seus arquivos possuírem outros nomes, substitua conforme necessário.
 
 ---
 
-# 1. MINIMIZAÇÃO
+## 1. MINIMIZAÇÃO
 
 Este comando executa a minimização utilizando **sander** (CPU). Caso exista o arquivo `dihe.restraint`, é necessário atualizar o valor de força antes.
 
@@ -27,13 +27,13 @@ Este comando executa a minimização utilizando **sander** (CPU). Caso exista o 
 grep -q "FC" dihe.restraint && sed -e "s/FC/1.0/g" dihe.restraint > step4.0_minimization.rest
 ```
 
-### **Rodar a minimização:**
+### **Executar a minimização:**
 
 ```bash
 sander -O -i step4.0_minimization.mdin -p step3_input.parm7 -c step3_input.rst7 -o step4.0_minimization.mdout -r step4.0_minimization.rst7 -inf step4.0_minimization.mdinfo -ref step3_input.rst7
 ```
 
-### Se quiser rodar em GPU:
+## Se quiser executar em GPU:
 
 ```bash
 pmemd.cuda -O ... (mesmos argumentos)
@@ -41,7 +41,7 @@ pmemd.cuda -O ... (mesmos argumentos)
 
 ---
 
-# 2. EQUILIBRAÇÃO
+## 2. EQUILIBRAÇÃO
 
 Se `dihe.restraint` existir:
 
@@ -49,7 +49,7 @@ Se `dihe.restraint` existir:
 sed -e "s/FC/1.0/g" dihe.restraint > step4.1_equilibration.rest
 ```
 
-### **Rodar a equilibração:**
+### **Executar a equilibração:**
 
 ```bash
 sander -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_minimization.rst7 -o step4.1_equilibration.mdout -r step4.1_equilibration.rst7 -inf step4.1_equilibration.mdinfo -ref step3_input.rst7 -x step4.1_equilibration.nc
@@ -63,7 +63,7 @@ pmemd.cuda -O ...
 
 ---
 
-# 3. PRODUÇÃO
+## 3. PRODUÇÃO
 
 ```bash
 sander -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
@@ -75,11 +75,11 @@ sander -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration
 mpirun -np 18 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
 ```
 
+**Nota:** Para realizar uma dinâmica QM/MM utilizando a teoria semiempírica AM1, não é possível executar com aceleração por GPU através do `pmemd.cuda`. Para executar uma simulação QM/MM na qual a região quântica será calculada em GPU, deverá ser feito uso do QUICK. O QUICK é um software de cálculo quântico que pode ser utilizado diretamente através do AmberTools.
+
 ---
 
-**Nota:** Para a um dinâmica QM/MM utilizando a teoria semiempírica AM1, não é possível executar utilizando GPU através de pmemd.cuda. Para executar uma QM/MM onde a região quântica será calculada com GPU deverá ser feito uso do QUICK. O QUICK é um software para cálculo quântico que pode ser utilizando através do AmberTools.
-
-## Dinâmica moléculas QM/MM com o QUICK
+# Dinâmica moléculas QM/MM com o QUICK
 
 O **SANDER** pode acessar diferentes tipos de instalação do QUICK para simulações QM/MM:  
 - serial,  
@@ -114,6 +114,8 @@ Esse passo garante que a localização dos executáveis e bibliotecas necessári
 
 Abaixo está um exemplo das modificações necessárias no arquivo de entrada do SANDER para realizar uma simulação QM/MM com **embedding mecânico**. Neste exemplo, os dois primeiros resíduos do sistema são colocados na região QM e a simulação é executada no nível **B3LYP/def2-SVP** usando o `quick.cuda.MPI` com 2 GPUs:
 
+O arquivo de entrada (.mdin) deverá conter:
+
 ```bash
 &cntrl
   ...
@@ -146,7 +148,7 @@ Abaixo está um exemplo das modificações necessárias no arquivo de entrada do
 
 ## Interface de programação (API)
 
-Exemplo para simulação QM/MM com **embedding eletrostático** (o mais comum). O mesmo arquivo de entrada funciona para todas as versões do QUICK (serial, MPI, single-GPU ou multi-GPU):
+Exemplo para simulação QM/MM com **embedding eletrostático** (o mais comum). O mesmo arquivo de entrada (.mdin) funciona para todas as versões do QUICK (serial, MPI, single-GPU ou multi-GPU):
 
 ```bash
 &cntrl
@@ -171,7 +173,7 @@ Exemplo para simulação QM/MM com **embedding eletrostático** (o mais comum). 
 - O mesmo input funciona com `sander`, `sander.MPI`, `sander.quick.cuda` ou `sander.quick.cuda.MPI`
 - Será gerado um arquivo `quick.out` com toda a saída detalhada do QUICK a cada passo de MD
 
-### 11.3.1.3. Variáveis do namelist &quick (resumo completo)
+### Variáveis do namelist &quick (resumo completo)
 
 | Variável          | Tipo     | Apenas API/FBI | Descrição e valores comuns                                                                                  |
 |-------------------|----------|----------------|-------------------------------------------------------------------------------------------------------------|
@@ -224,7 +226,7 @@ sander.quick.cuda -O -i md.in -o md.out -p topo.prmtop -c coord.rst
 mpirun -np 8 sander.quick.cuda.MPI -O -i md.in -o md.out -p topo.prmtop -c coord.rst
 ```
 
-E no input:
+E no input (.mdin):
 
 ```input
 &qmmm
@@ -236,3 +238,7 @@ E no input:
   basis = '6-31G*',        ! se for ab initio
 /
 ```
+
+---
+
+> As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
