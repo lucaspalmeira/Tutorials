@@ -239,6 +239,31 @@ E no input (.mdin):
 /
 ```
 
+Aqui em meu estudo utilizei as seguintes flags para o arquivo .mdin da produção:
+
+```input
+ &qmmm
+  iqmatoms=593, 594, 595, 596, 597, 598, 3722, 3723, 3724, 3725, 3726, 3727, 3728, 3729, 3730, 3731, 45573, 45574, 45575, 45624, 45625, 45626, 56283, 56284, 56285, 58281, 58282, 58283, 58680, 58681, 58682, 58608, 58609, 58610, 58863, 58864, 58865, 9066, 9067, 9068, 9069, 9070, 9071, 9072, 9073, 9074, 9075, 9076, 9077, 9078, 9079, 9080, 9081, 9082, 9083, 9084, 9085, 9086, 9087, 9088, 
+  qmcharge=-1,
+  qm_theory='quick',
+  qmcut=12.0,
+  qmshake=0,
+  adjust_q=1
+ /
+ &quick
+  method = 'B3LYP',
+  basis = 'def2-svp',
+ /
+```
+
+E executei:
+
+```bash
+mpirun -np 2 sander.quick.cuda.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
+```
+
+**Nota:** A flag `-np` recebe o valor `2`, pois uma quantidade maior de núcleos da CPU pode explodir a memória da GPU instantaneamente.
+
 ---
 
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
