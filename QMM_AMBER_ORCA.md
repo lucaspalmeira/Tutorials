@@ -110,7 +110,7 @@ Exemplos de como usar tanto a API quanto a funcionalidade FBI podem ser encontra
 (ou `source $AMBERHOME/amber.csh`, dependendo do seu shell).  
 Esse passo garante que a localização dos executáveis e bibliotecas necessários seja corretamente configurada nas variáveis de ambiente do sistema operacional.
 
-Interface baseada em arquivos
+## Interface baseada em arquivos (FBI)
 
 Abaixo está um exemplo das modificações necessárias no arquivo de entrada do SANDER para realizar uma simulação QM/MM com **embedding mecânico**. Neste exemplo, os dois primeiros resíduos do sistema são colocados na região QM e a simulação é executada no nível **B3LYP/def2-SVP** usando o `quick.cuda.MPI` com 2 GPUs:
 
@@ -144,7 +144,7 @@ Abaixo está um exemplo das modificações necessárias no arquivo de entrada do
 - Em geral, **deve-se usar o sander serial** (não o `sander.MPI`) porque há limitações em chamadas de sistema dentro de programas MPI.
 - Isso significa que **a parte MM roda em apenas um núcleo** (serial), mesmo usando várias GPUs na parte QM.
 
-Interface de programação
+## Interface de programação (API)
 
 Exemplo para simulação QM/MM com **embedding eletrostático** (o mais comum). O mesmo arquivo de entrada funciona para todas as versões do QUICK (serial, MPI, single-GPU ou multi-GPU):
 
