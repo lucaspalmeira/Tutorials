@@ -264,6 +264,34 @@ mpirun -np 2 sander.quick.cuda.MPI -O -i step5_production.mdin -p step3_input.pa
 
 **Nota:** A flag `-np` recebe o valor `2`, pois uma quantidade maior de núcleos da CPU pode explodir a memória da GPU instantaneamente.
 
+Se ocorrer MPI_ABORT e no arquivo `quick.out` estiver escrito:
+
+```output
+QMMM: System specified with odd number of electrons (107)
+QMMM: but odd spin (1). You most likely have the charge of
+QMMM: QM region (qmcharge) set incorrectly.
+```
+
+Isso acontece porque a região QM selecionada tem 107 elétrons (número ímpar). Um sistema com número ímpar de elétrons não pode ser um singlet (spin = 1 é o valor padrão do Amber para singlet). Ele tem que ser, no mínimo, um dubleto (multiplicidade 2 → 1 elétron desemparelhado).
+
+Para isso, o arquivo `.mdin` deverá ter a flag `spin=1` e `qmcharge=-1`
+
+```input
+ &qmmm
+  iqmatoms=3729, 45573, 45574, 45575, 3728, 3730, 3731, 598, 596, 597, 45624, 45625, 45626, 56283, 56284, 56285, 58281, 58282, 58283, 58590, 58591, 58592, 9067, 9068, 9066, 9089, 9106, 9109, 9110, 9107, 9108, 
+  qmcharge=-1,
+  spin=1,
+  qm_theory='quick',
+  qmcut=12.0,
+  qmshake=0,
+  adjust_q=1
+ /
+ &quick
+  method = 'B3LYP',
+  basis = 'def2-svp',
+ /
+```
+
 ---
 
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
