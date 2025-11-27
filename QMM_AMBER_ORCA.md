@@ -5,7 +5,7 @@ Este README descreve **como executar minimização, equilíbrio e produção** u
 * Explicação do workflow
 * Comandos completos, sem variáveis
 * Execução com CPU (sander) ou GPU (pmemd.cuda)
-* Produção em **um único comando**, sem divisão em etapas
+* Produção realizada com o método B2LYP (DFT) ou semiempírico
 
 Os nomes de arquivos assumidos são:
 
@@ -72,7 +72,7 @@ sander -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration
 ### Para executar em GPU (recomendado):
 
 ```bash
-mpirun -np 18 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
+mpirun -np 2 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
 ```
 
 **Nota:** Para realizar uma dinâmica QM/MM utilizando a teoria semiempírica AM1, não é possível executar com aceleração por GPU através do `pmemd.cuda`. Para executar uma simulação QM/MM na qual a região quântica será calculada em GPU, deverá ser feito uso do QUICK. O QUICK é um software de cálculo quântico que pode ser utilizado diretamente através do AmberTools.
