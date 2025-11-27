@@ -1,4 +1,4 @@
-# Execução de Dinâmica Molecular no AMBER (CHARMM-GUI)
+# QM/MM no AMBER: do CHARMM-GUI à Produção com QUICK (B3LYP) e Métodos Semiempíricos
 
 Este README descreve **como executar minimização, equilíbrio e produção** utilizando os arquivos gerados pelo **CHARMM-GUI** para **AMBER**, incluindo:
 
@@ -239,13 +239,15 @@ E no input (.mdin):
 /
 ```
 
-Aqui em meu estudo utilizei as seguintes flags para o arquivo .mdin da produção:
+---
+
+## Neste estudo, utilizamos as seguintes flags no arquivo `.mdin` para a simulação de produção executada com o programa **QUICK**:
 
 ```input
  &qmmm
   iqmatoms=593, 594, 595, 596, 597, 598, 3722, 3723, 3724, 3725, 3726, 3727, 3728, 3729, 3730, 3731, 45573, 45574, 45575, 45624, 45625, 45626, 56283, 56284, 56285, 58281, 58282, 58283, 58680, 58681, 58682, 58608, 58609, 58610, 58863, 58864, 58865, 9066, 9067, 9068, 9069, 9070, 9071, 9072, 9073, 9074, 9075, 9076, 9077, 9078, 9079, 9080, 9081, 9082, 9083, 9084, 9085, 9086, 9087, 9088, 
   qmcharge=-1,
-  qm_theory='quick',
+  qm_theory='PM3',
   qmcut=12.0,
   qmshake=0,
   adjust_q=1
@@ -256,15 +258,14 @@ Aqui em meu estudo utilizei as seguintes flags para o arquivo .mdin da produçã
  /
 ```
 
-E executei:
+A simulação foi executada com o comando:
 
 ```bash
 mpirun -np 2 sander.quick.cuda.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
 ```
 
-**Nota:** A flag `-np` recebe o valor `2`, pois uma quantidade maior de núcleos da CPU pode explodir a memória da GPU instantaneamente.
-
-Se ocorrer MPI_ABORT e no arquivo `quick.out` estiver escrito:
+Nota: O parâmetro -np foi limitado a 2 porque o uso de mais núcleos de CPU provoca overflow instantâneo de memória nas GPUs (2× RTX 4090).
+Caso ocorra erro MPI_ABORT e o arquivo quick.out contenha a mensagem:
 
 ```output
 QMMM: System specified with odd number of electrons (107)
@@ -272,9 +273,8 @@ QMMM: but odd spin (1). You most likely have the charge of
 QMMM: QM region (qmcharge) set incorrectly.
 ```
 
-Isso acontece porque a região QM selecionada tem 107 elétrons (número ímpar). Um sistema com número ímpar de elétrons não pode ser um singlet (spin = 1 é o valor padrão do Amber para singlet). Ele tem que ser, no mínimo, um dubleto (multiplicidade 2 → 1 elétron desemparelhado).
-
-Para isso, o arquivo `.mdin` deverá ter a flag `spin=1` e `qmcharge=-1`
+Isso acontece porque a região QM selecionada possui 107 elétrons (número ímpar). Um sistema com número ímpar de elétrons não pode ser um singlet (spin = 1 é o valor padrão do Amber para singlet). Ele deve ser, no mínimo, um dubleto (multiplicidade 2 → 1 elétron desemparelhado).
+Para corrigir, adicionamos explicitamente as flags spin=1 (dubleto) e qmcharge=-1 ao final do arquivo .mdin:
 
 ```input
  &qmmm
@@ -293,5 +293,32 @@ Para isso, o arquivo `.mdin` deverá ter a flag `spin=1` e `qmcharge=-1`
 ```
 
 ---
+
+Infelizmente, mesmo utilizando `mpirun -np 2 sander.quick.cuda.MPI`, a estimativa de tempo foi de 6123,8 horas (~0,22 ns/dia), o que implicaria cerca de 255 dias para completar a simulação mesmo com aceleração por GPU.
+
+Devido ao elevado custo computacional, a dinâmica molecular QM/MM foi realizada utilizando um método semiempírico com `qm_theory='AM1'`. 
+
+As flags utilizadas no arquivo .mdin da produção foram:
+
+```ìnput
+ &qmmm
+  iqmatoms=3729, 45573, 45574, 45575, 3728, 3730, 3731, 598, 596, 597, 45624, 45625, 45626, 56283, 56284, 56285, 58281, 58282, 58283, 58590, 58591, 58592, 9067, 9068, 9066, 9089, 9106, 9109, 9110, 9107, 9108, 
+  qmcharge=-1,
+  spin=1,
+  qm_theory='AM1',
+  qmcut=12.0,
+  qmshake=1,
+  adjust_q=1,
+  qm_ewald=1, qm_pme=1,
+ /
+```
+
+Mantivemos `spin=1` e `qmcharge=-1`. A simulação foi então executada utilizando apenas CPU (28 núcleos):
+
+```bash
+mpirun -np 28 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5.mdout -r step5.rst7 -inf step5.mdinfo -x step5.nc
+```
+
+Embora este protocolo não utilize GPU, o tempo estimado caiu significativamente para 112,3 horas (mantendo ~0,22 ns/dia), tornando o cálculo viável.
 
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
