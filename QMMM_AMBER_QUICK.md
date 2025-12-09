@@ -353,6 +353,8 @@ O AMBER verifica se a região QM “cabe” dentro da caixa de simulação, cons
 * O **cutoff QM/MM** (`qmcut`)
 * A **menor dimensão da caixa** (por exemplo, `80.531 Å` no eixo X)
 
+O parâmetro qmcut define o raio de corte eletrostático, em angstrons, usado para determinar quais átomos da região clássica (MM) interagem eletrostaticamente com a região quântica (QM) em simulações QM/MM no AMBER. Em outras palavras, qualquer átomo MM que esteja dentro dessa distância em relação a qualquer átomo QM será incluído na lista de pares que participam das interações eletrostáticas QM–MM. Esse valor, por padrão, é igual ao cutoff clássico (cut) usado para as interações MM–MM, e geralmente não precisa ser alterado. Em cálculos que usam Ewald ou PME, o qmcut afeta apenas a parte direta (real-space) da decomposição eletrostática, enquanto a parte recíproca continua independente do cutoff. É importante destacar que esse parâmetro não altera as interações internas da região QM, já que todos os átomos QM interagem entre si independentemente da distância, e também não influencia as interações de van der Waals entre QM e MM, que continuam sendo tratadas classicamente com o cutoff especificado por cut.
+
 A condição necessária para **não gerar erro** é:
 
 ```
