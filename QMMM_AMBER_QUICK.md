@@ -321,4 +321,199 @@ mpirun -np 28 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c ste
 
 Embora este protocolo não utilize GPU, o tempo estimado caiu significativamente para 112,3 horas (mantendo ~0,22 ns/dia), tornando o cálculo viável.
 
+---
+
+## Possíveis erros:
+
+**Erro *“QM region + cutoff larger than box”* no AMBER**
+
+Durante uma simulação QM/MM com o AMBER (sander/pmemd), pode surgir o erro:
+
+```
+****************************************************
+ERROR: QM region + cutoff larger than box dimension:
+QM-MM Cutoff = 35.0000
+ Coord   Lower     Upper    Size    Radius of largest sphere inside unit cell
+   X   -40.743    39.788    80.531    46.761
+   Y   -40.855    52.676    93.531    46.761
+   Z   -42.214    43.047    85.261    46.761
+****************************************************
+SANDER BOMB in subroutine QM_CHECK_PERIODIC<qm_mm.f>
+QM region + cutoff larger than box
+cannot continue, need larger box.
+```
+
+---
+
+### Causa do erro
+
+O AMBER verifica se a região QM “cabe” dentro da caixa de simulação, considerando:
+
+* O **raio da região QM** (distância máxima entre o centróide QM e seus átomos)
+* O **cutoff QM/MM** (`qmcut`)
+* A **menor dimensão da caixa** (por exemplo, `80.531 Å` no eixo X)
+
+A condição necessária para **não gerar erro** é:
+
+```
+QM_radius + qmcut  <  half_box_dimension
+```
+
+Onde:
+
+```
+half_box_dimension = (menor dimensão da caixa) / 2
+```
+
+Se essa condição não for satisfeita, o AMBER aborta com o erro acima.
+
+---
+
+### Exemplo do problema encontrado
+
+Com:
+
+* `qmcut = 35 Å`
+* `QM_radius = 8.147 Å`
+* menor dimensão da caixa = `80.531 Å`
+
+Temos:
+
+```
+QM_radius + qmcut = 43.147 Å
+half_box_dimension = 80.531 / 2 = 40.265 Å
+```
+
+Comparando:
+
+```
+43.147 Å  >  40.265 Å   ← NÃO CABE NA CAIXA
+```
+
+Portanto, o AMBER interrompe a execução.
+
+---
+
+### Solução
+
+**Reduzir o `qmcut`**
+
+Se você usar, por exemplo, `qmcut = 30 Å`:
+
+```
+QM_radius + qmcut = 38.147 Å
+half_box_dimension = 40.265 Å
+```
+
+Agora:
+
+```
+38.147 < 40.265  ← ✔️ OK
+```
+
+A simulação QM/MM roda sem erros.
+
+---
+
+### Como verificar automaticamente se sua caixa comporta a região QM
+
+Use o script abaixo para calcular:
+
+* centróide da região QM
+* raio da região QM
+* tamanho mínimo necessário da caixa
+* se o `qmcut` escolhido é possível
+
+---
+
+### Script: **calc_qm_radius.py**
+
+salve como `calc_qm_radius.py` e execute: 
+```bash
+python calc_qm_radius.py step3_input.pdb <qmcut> <size>
+```
+
+```python
+import sys, math, statistics
+fn=sys.argv[1]
+# lista do seu &qmmm
+iqm_list=[3729,45573,45574,45575,3728,3730,3731,598,596,597,45624,45625,45626,56283,56284,56285,58281,58282,58283,58590,58591,58592,9067,9068,9066,9089,9106,9109,9110,9107,9108]
+
+atoms=[]
+with open(fn) as f:
+    for line in f:
+        if line.startswith("ATOM") or line.startswith("HETATM"):
+            serial=int(line[6:11].strip())
+            x=float(line[30:38].strip()); y=float(line[38:46].strip()); z=float(line[46:54].strip())
+            resseq=line[22:26].strip()
+            atoms.append((serial,int(resseq) if resseq.isdigit() else None,x,y,z))
+
+# try match by atom serials first, else by residue numbers
+coords=[(x,y,z) for (s,rs,x,y,z) in atoms if s in iqm_list]
+if not coords:
+    coords=[(x,y,z) for (s,rs,x,y,z) in atoms if rs in iqm_list]
+
+if not coords:
+    print("Nenhum átomo IQM encontrado: verifique se os números em iqm_list são ATOM serials ou residue IDs.")
+    print("Total de átomos no PDB:", len(atoms))
+    sys.exit(1)
+
+cx=sum(x for x,y,z in coords)/len(coords)
+cy=sum(y for x,y,z in coords)/len(coords)
+cz=sum(z for x,y,z in coords)/len(coords)
+dists=[math.sqrt((x-cx)**2+(y-cy)**2+(z-cz)**2) for x,y,z in coords]
+qm_radius=max(dists)
+print("IQM atom count:", len(coords))
+print("QM centroid: {:.3f} {:.3f} {:.3f}".format(cx,cy,cz))
+print("QM radius (max distance to centroid): {:.3f}Å".format(qm_radius))
+qmcut = int(sys.argv[2])
+required_half_box = qm_radius + qmcut
+print(f'required half box: {required_half_box}Å')
+required_box_size = 2 * required_half_box
+print(f'required_box_size: {required_box_size}Å')
+
+menor_dimensao_box = float(sys.argv[3]) #80.531
+metade_da_menor_dimensao_box = menor_dimensao_box / 2
+
+if required_half_box > metade_da_menor_dimensao_box:
+    print(f"ATENÇÃO: QM region + QMcut ({required_half_box:.2f} Å) > metade da caixa ({metade_da_menor_dimensao_box:.2f} Å)")
+    print(f"         Solução: aumente o box ou reduza QMcut (atual = {qmcut} Å).")
+else:
+    print(f"OK → QM region + QMcut = {required_half_box:.2f} Å (cabe na caixa de {menor_dimensao_box:.2f} Å)")
+```
+
+---
+
+# Como usar
+
+```bash
+python calc_qm_radius.py step3_input.pdb 35 80.531
+```
+
+Exemplo de saída indicando problema:
+
+```
+IQM atom count: 31
+QM centroid: -8.948 8.242 8.976
+QM radius (max distance to centroid): 8.147Å
+required half box: 38.14681655042923Å
+required_box_size: 76.29363310085846Å
+ QM_radius (qm_radius) + QMcut (30) = 38.14681655042923 < 40.2655(Metade da menor dimensao caixa)
+```
+
+```bash
+python calc_qm_radius.py step3_input.pdb 30 80.531
+```
+
+Exemplo indicando que está OK:
+
+```
+IQM atom count: 31
+QM centroid: -8.948 8.242 8.976
+QM radius (max distance to centroid): 8.147Å
+required half box: 38.14681655042923Å
+required_box_size: 76.29363310085846Å
+OK → QM region + QMcut = 38.15 Å (cabe na caixa de 80.53 Å)
+```
+
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
