@@ -438,7 +438,7 @@ python calc_qm_radius.py step3_input.pdb <qmcut> <size>
 ```python
 import sys, math, statistics
 fn=sys.argv[1]
-# lista do seu &qmmm
+# lista de átomos da região QM
 iqm_list=[3729,45573,45574,45575,3728,3730,3731,598,596,597,45624,45625,45626,56283,56284,56285,58281,58282,58283,58590,58591,58592,9067,9068,9066,9089,9106,9109,9110,9107,9108]
 
 atoms=[]
@@ -450,7 +450,6 @@ with open(fn) as f:
             resseq=line[22:26].strip()
             atoms.append((serial,int(resseq) if resseq.isdigit() else None,x,y,z))
 
-# try match by atom serials first, else by residue numbers
 coords=[(x,y,z) for (s,rs,x,y,z) in atoms if s in iqm_list]
 if not coords:
     coords=[(x,y,z) for (s,rs,x,y,z) in atoms if rs in iqm_list]
@@ -465,9 +464,9 @@ cy=sum(y for x,y,z in coords)/len(coords)
 cz=sum(z for x,y,z in coords)/len(coords)
 dists=[math.sqrt((x-cx)**2+(y-cy)**2+(z-cz)**2) for x,y,z in coords]
 qm_radius=max(dists)
-print("IQM atom count:", len(coords))
-print("QM centroid: {:.3f} {:.3f} {:.3f}".format(cx,cy,cz))
-print("QM radius (max distance to centroid): {:.3f}Å".format(qm_radius))
+print("Contagem de átomos da região QM:", len(coords))
+print("QM centroide: {:.3f} {:.3f} {:.3f}".format(cx,cy,cz))
+print("Raio QM (distância máxima ao centroide): {:.3f}Å".format(qm_radius))
 qmcut = int(sys.argv[2])
 required_half_box = qm_radius + qmcut
 print(f'required half box: {required_half_box}Å')
@@ -486,7 +485,7 @@ else:
 
 ---
 
-# Como usar
+### Como usar
 
 ```bash
 python calc_qm_radius.py step3_input.pdb 35 80.531
@@ -495,9 +494,9 @@ python calc_qm_radius.py step3_input.pdb 35 80.531
 Exemplo de saída indicando problema:
 
 ```
-IQM atom count: 31
-QM centroid: -8.948 8.242 8.976
-QM radius (max distance to centroid): 8.147Å
+contagem de átomos da região QM: 31
+QM centroide: -8.948 8.242 8.976
+Raio QM (distância máxima ao centroide): 8.147Å
 required half box: 38.14681655042923Å
 required_box_size: 76.29363310085846Å
  QM_radius (qm_radius) + QMcut (30) = 38.14681655042923 < 40.2655(Metade da menor dimensao caixa)
@@ -510,9 +509,9 @@ python calc_qm_radius.py step3_input.pdb 30 80.531
 Exemplo indicando que está OK:
 
 ```
-IQM atom count: 31
-QM centroid: -8.948 8.242 8.976
-QM radius (max distance to centroid): 8.147Å
+Contagem de átomos da região QM: 31
+QM centroide: -8.948 8.242 8.976
+Raio QM (distância máxima ao centroide): 8.147Å
 required half box: 38.14681655042923Å
 required_box_size: 76.29363310085846Å
 OK → QM region + QMcut = 38.15 Å (cabe na caixa de 80.53 Å)
