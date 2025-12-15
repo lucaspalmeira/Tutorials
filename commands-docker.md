@@ -195,7 +195,7 @@ docker pull aetafur/dlkcat
 
 Execute no diretório atual de trabalho
 ```bash
-docker run -d --rm --gpus all --name dlkcat-container -v "$(pwd)":/workspace -w /workspace aetafur/dlkcat:latest
+docker run -d --rm --gpus all -it --name dlkcat-container -v "$(pwd)":/workspace -w /workspace aetafur/dlkcat:latest tail -f /dev/null
 ```
 
 Para entrar no shell do container em execução:
