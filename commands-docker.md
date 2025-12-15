@@ -183,7 +183,32 @@ docker system prune --volumes -f
 ```bash
 docker system prune -a --volumes
 ```
+---
 
+### Run DLKcat
 
+Para obter a imagem
+
+```bash
+docker pull aetafur/dlkcat
+```
+
+Execute no diretório atual de trabalho
+```bash
+docker run -d --rm --gpus all --name dlkcat-container -v "$(pwd)":/workspace -w /workspace aetafur/dlkcat:latest
+```
+
+Para entrar no shell do container em execução:
+```bash
+docker exec -it dlkcat-container bash
+```
+
+Para parar o conteiner:
+```bash
+docker stop dlkcat-container
+```
+Como foi usado `--rm`, ele será removido automaticamente ao parar.
+
+---
 ## Docker compose commands
 > https://docs.docker.com/compose/reference/
