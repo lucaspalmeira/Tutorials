@@ -233,7 +233,7 @@ run_prediction \
 echo "Todas as predições foram executadas!"
 ```
 
-Oript executa predições para as 4 reações, gerando arquivos CSV em `./results/`:
+O script executa predições para as 4 reações, gerando arquivos CSV em `./results/`:
 - `${TAG}_feasibility.csv`: Viabilidade catalítica por enzima.
 - `${TAG}_kcat.csv`: Predições de kcat e otimização evolutiva de variantes.
 
