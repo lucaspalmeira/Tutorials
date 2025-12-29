@@ -33,6 +33,12 @@ Para criar o container, execute:
 docker run --gpus all -dit --name gt4sd-gpu -v /home/node03/Alunos/lucas/gt4sd-core-gpu:/workspace drugilsberg/gt4sd-base:v1.4.2-gpu bash
 ```
 
+Ou para usar apenas um GPU específica (ex.: GPU Device=1)
+
+```bash
+docker run --gpus '"device=1"' -dit --name gt4sd-gpu -v /home/node03/Alunos/lucas/gt4sd-core-gpu:/workspace drugilsberg/gt4sd-base:v1.4.2-gpu bash
+```
+
 Acesse o container:
 
 ```bash
