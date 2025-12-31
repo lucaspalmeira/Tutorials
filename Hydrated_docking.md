@@ -30,11 +30,11 @@ sudo cp vina /usr/local/bin/
 Baixe os scripts da Meeko e do mapwater:
 
 ```bash
-wget https://github.com/forlilab/Meeko/release/meeko/cli/mk_prepare_receptor.py
-wget https://github.com/forlilab/Meeko/release/meeko/cli/mk_prepare_ligand.py
-wget https://github.com/forlilab/molscrub/blob/develop/scripts/scrub.py
-wget https://github.com/ccsb-scripps/AutoDock-Vina/develop/example/autodock_scripts/mapwater.py
-wget https://github.com/ccsb-scripps/AutoDock-Vina/blob/develop/example/autodock_scripts/dry.py
+https://github.com/forlilab/Meeko/release/meeko/cli/mk_prepare_receptor.py
+https://github.com/forlilab/Meeko/release/meeko/cli/mk_prepare_ligand.py
+https://github.com/forlilab/molscrub/blob/develop/scripts/scrub.py
+https://github.com/ccsb-scripps/AutoDock-Vina/develop/example/autodock_scripts/mapwater.py
+https://github.com/ccsb-scripps/AutoDock-Vina/blob/develop/example/autodock_scripts/dry.py
 ```
 
 ### 1.3 Outros programas necessários
