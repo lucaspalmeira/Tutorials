@@ -34,6 +34,7 @@ wget https://raw.githubusercontent.com/forlilab/Meeko/release/meeko/cli/mk_prepa
 wget https://raw.githubusercontent.com/forlilab/Meeko/release/meeko/cli/mk_prepare_ligand.py
 wget https://raw.githubusercontent.com/forlilab/molscrub/blob/develop/scripts/scrub.py
 wget https://raw.githubusercontent.com/ccsb-scripps/AutoDock-Vina/develop/example/autodock_scripts/mapwater.py
+wget https://raw.githubusercontent.com/ccsb-scripps/AutoDock-Vina/blob/develop/example/autodock_scripts/dry.py
 ```
 
 ### 1.3 Outros programas necessários
