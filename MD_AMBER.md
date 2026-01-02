@@ -14,6 +14,224 @@ ou
 CUDA_VISIBLE_DEVICES="1" pmemd.cuda ...
 ```
 
+## Geração de `dihe.restraint` para glicanos (inulina) no AMBER
+
+Esta etapa descreve **passo a passo** como identificar um ligante glicano preparado pelo **CHARMM-GUI (Solution Builder)** e gerar manualmente um arquivo **`dihe.restraint`** para uso em simulações de dinâmica molecular no **AMBER**.
+
+O procedimento é especialmente útil quando o CHARMM-GUI **não cria automaticamente** restrições diedrais para carboidratos/polímeros (caso comum para frutanos/inulina). Caso o arquivo tenha sido criado, pule ignore esta etapa e pule para a etapa de minimização.
+
+---
+
+### Contexto
+
+* Sistema preparado no **CHARMM-GUI**
+* Dinâmica será executada no **AMBER**
+* Ligante: **inulina (β-frutano)**
+* Resíduos do ligante: `1CU` e `0CU`
+* Arquivos principais:
+
+  * `amber/step3_input.parm7`
+  * `amber/step3_input.rst7`
+
+---
+
+### Identificar os resíduos do ligante
+
+Dentro do diretório do sistema, gere a lista de resíduos:
+
+```bash
+cpptraj step3_input.parm7 << EOF > residues.dat
+resinfo :*
+EOF
+```
+
+No arquivo `residues.dat`, identifique o ligante. Exemplo:
+
+```
+  571 1CU    8794   8814     21   571     2    
+  572 1CU    8815   8835     21   572     2    
+  573 1CU    8836   8856     21   573     2    
+  574 1CU    8857   8877     21   574     2    
+  575 1CU    8878   8898     21   575     2    
+  576 0CU    8899   8920     22   576     2 
+```
+
+Isso indica uma cadeia de **6 unidades de frutose**, sendo a última terminal (`0CU`).
+
+---
+
+### Inspecionar nomes e índices dos átomos
+
+Entre no `cpptraj`:
+
+```bash
+cpptraj step3_input.parm7
+```
+
+Liste os átomos de um resíduo do ligante:
+
+```cpptraj
+atominfo :571
+```
+
+Átomos relevantes para diedros glicosídicos (exemplo real):
+
+* `O5`
+* `C2`
+* `O1`
+* `C1`
+
+Repita para o próximo resíduo:
+
+```cpptraj
+atominfo :572
+```
+
+---
+
+### Definição correta dos diedros para β(2→1)-frutano
+
+Para cada ligação glicosídica entre os resíduos *i* e *i+1*:
+
+#### 🔹 Diedro φ (phi)
+
+```
+O5(i) – C2(i) – O1(i+1) – C1(i+1)
+```
+
+#### 🔹 Diedro ψ (psi)
+
+```
+C2(i) – O1(i+1) – C1(i+1) – C2(i+1)
+```
+
+Esses são os **únicos diedros que devem ser restringidos**.
+
+**Nota:** Nunca restrinja diedros internos do anel.
+
+---
+
+### Medir os valores iniciais dos diedros
+
+Crie o arquivo `get_glycan_dihes.cpptraj`:
+
+```cpptraj
+parm step3_input.parm7
+trajin step3_input.rst7 1 1
+
+dihedral phi_571_572 :571@O5 :571@C2 :572@O1 :572@C1 out phi_571_572.dat
+dihedral psi_571_572 :571@C2 :572@O1 :572@C1 :572@C2 out psi_571_572.dat
+
+run
+```
+
+Execute:
+
+```bash
+cpptraj -i get_glycan_dihes.cpptraj
+```
+
+Verifique os valores:
+
+```bash
+head phi_571_572.dat
+head psi_571_572.dat
+```
+
+---
+
+### Obter os índices absolutos dos átomos (ParmEd)
+
+Entre no ParmEd:
+
+```bash
+parmed step3_input.parm7
+```
+
+Liste os átomos envolvidos:
+
+```parmed
+printAtoms :571@O5,C2
+printAtoms :572@O1,C1,C2
+```
+
+Exemplo de saída:
+
+```
+8795 O5
+8794 C2
+8835 O1
+8832 C1
+8815 C2
+```
+
+Esses números serão usados no `dihe.restraint`.
+
+---
+
+### Criar o arquivo `dihe.restraint`
+
+Exemplo **correto e funcional**:
+
+```text
+&rst
+ iat=8795,8794,8835,8832,
+ r1=-180.0, r2=-75.0, r3=-55.0, r4=180.0,
+ rk2=20.0, rk3=20.0,
+/
+
+&rst
+ iat=8794,8835,8832,8815,
+ r1=-180.0, r2=100.0, r3=130.0, r4=180.0,
+ rk2=20.0, rk3=20.0,
+/
+```
+
+Ajuste `r2` e `r3` com base nos valores medidos (±10° é o ideal).
+
+Repita para todas as ligações:
+
+* 571–572
+* 572–573
+* 573–574
+* 574–575
+* 575–576
+
+Para o resíduo terminal (`0CU`), aplique apenas os diedros possíveis.
+
+---
+
+### Ativar o `dihe.restraint` no AMBER
+
+Nos arquivos `step4.0_minimization.mdin` e `step4.1_equilibration.mdin`:
+
+```ini
+&cntrl
+  nmropt=1,
+/
+&wt type='END' /
+DISANG=dihe.restraint
+```
+
+---
+
+### Boas práticas recomendadas
+
+* ✔ Use `dihe.restraint` **somente até o fim da equilibration**
+* ✔ Produção → **remova completamente**
+* ✔ `rk2 = rk3 = 10–20` é ideal
+* ✔ Nunca restrinja diedros do anel
+* ✔ Método compatível com literatura de MD de glicanos
+
+---
+
+Este procedimento garante:
+
+* Estabilidade conformacional inicial do glicano
+* Evita colapsos não físicos
+
+---
+
 ### 1. Minimização
 
 ```bash
