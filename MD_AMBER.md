@@ -17,10 +17,18 @@ CUDA_VISIBLE_DEVICES="1" pmemd.cuda ...
 ### 1. Minimização
 
 ```bash
+sed -e "s/FC/1.0/g" dihe.restraint > step4.0_minimization.rest
+```
+
+```bash
 pmemd.cuda -O -i step4.0_minimization.mdin -p step3_input.parm7 -c step3_input.rst7 -o step4.0_minimization.mdout -r step4.0_minimization.rst7 -inf step4.0_minimization.mdinfo -ref step3_input.rst7
 ```
 
 ### 2. Equilibração
+
+```bash
+sed -e "s/FC/1.0/g" dihe.restraint > step4.1_equilibration.rest
+```
 
 ```bash
 pmemd.cuda -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_minimization.rst7 -o step4.1_equilibration.mdout -r step4.1_equilibration.rst7 -inf step4.1_equilibration.mdinfo -ref step3_input.rst7 -x step4.1_equilibration.nc
