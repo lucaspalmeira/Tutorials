@@ -79,7 +79,7 @@ Liste os átomos de um resíduo do ligante:
 atominfo :571
 ```
 
-Átomos relevantes para diedros glicosídicos (exemplo real):
+Átomos relevantes para diedros glicosídicos:
 
 * `O5`
 * `C2`
