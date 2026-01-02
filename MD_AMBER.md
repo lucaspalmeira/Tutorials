@@ -20,6 +20,8 @@ Esta etapa descreve **passo a passo** como identificar um ligante glicano prepar
 
 O procedimento é especialmente útil quando o CHARMM-GUI **não cria automaticamente** restrições diedrais para carboidratos/polímeros (caso comum para frutanos/inulina). Caso o arquivo tenha sido criado, pule ignore esta etapa e pule para a etapa de minimização.
 
+Assim, o workflow descrito aqui foi aplicado a um oligômero de frutose β-(2→1) contendo os resíduos 571–576.
+
 ---
 
 ### Contexto
@@ -32,6 +34,9 @@ O procedimento é especialmente útil quando o CHARMM-GUI **não cria automatica
 
   * `amber/step3_input.parm7`
   * `amber/step3_input.rst7`
+  * `residues.dat`
+  * `calc_inulin_dihedrals.in`
+  * `write_dihe_restraint.py`
 
 ---
 
@@ -45,7 +50,7 @@ resinfo :*
 EOF
 ```
 
-No arquivo `residues.dat`, identifique o ligante. Exemplo:
+A partir do arquivo `residues.dat`, o ligante foi identificado como:
 
 ```
   571 1CU    8794   8814     21   571     2    
@@ -111,16 +116,33 @@ Esses são os **únicos diedros que devem ser restringidos**.
 
 ---
 
-### Medir os valores iniciais dos diedros
+### Cálculo dos diedros com cpptraj
 
-Crie o arquivo `get_glycan_dihes.cpptraj`:
+Criar o arquivo `calc_inulin_dihedrals.in`:
 
 ```cpptraj
 parm step3_input.parm7
 trajin step3_input.rst7 1 1
 
+# Ligação 571–572
 dihedral phi_571_572 :571@O5 :571@C2 :572@O1 :572@C1 out phi_571_572.dat
-dihedral psi_571_572 :571@C2 :572@O1 :572@C1 :572@C2 out psi_571_572.dat
+dihedral psi_571_572 :571@C2 :572@O1 :572@C1 :572@O5 out psi_571_572.dat
+
+# Ligação 572–573
+dihedral phi_572_573 :572@O5 :572@C2 :573@O1 :573@C1 out phi_572_573.dat
+dihedral psi_572_573 :572@C2 :573@O1 :573@C1 :573@O5 out psi_572_573.dat
+
+# Ligação 573–574
+dihedral phi_573_574 :573@O5 :573@C2 :574@O1 :574@C1 out phi_573_574.dat
+dihedral psi_573_574 :573@C2 :574@O1 :574@C1 :574@O5 out psi_573_574.dat
+
+# Ligação 574–575
+dihedral phi_574_575 :574@O5 :574@C2 :575@O1 :575@C1 out phi_574_575.dat
+dihedral psi_574_575 :574@C2 :575@O1 :575@C1 :575@O5 out psi_574_575.dat
+
+# Ligação 575–576
+dihedral phi_575_576 :575@O5 :575@C2 :576@O1 :576@C1 out phi_575_576.dat
+dihedral psi_575_576 :575@C2 :576@O1 :576@C1 :576@O5 out psi_575_576.dat
 
 run
 ```
@@ -128,8 +150,9 @@ run
 Execute:
 
 ```bash
-cpptraj -i get_glycan_dihes.cpptraj
+cpptraj -i calc_inulin_dihedrals.in
 ```
+🔹 Serão gerados arquivos .dat com os valores dos diedros na estrutura inicial.
 
 Verifique os valores:
 
@@ -140,68 +163,73 @@ head psi_571_572.dat
 
 ---
 
-### Obter os índices absolutos dos átomos (ParmEd)
+### Criação automática do arquivo `dihe.restraint` (Python)
 
-Entre no ParmEd:
+Criar o script `write_dihe_restraint.py`:
+
+```python
+import glob
+
+RK = 20.0        # força da restrição (kcal/mol·rad²)
+DELTA = 10.0     # largura do poço (± graus)
+OUTFILE = "dihe.restraint"
+
+# Mapeamento diedro → índices de átomos (iat)
+# (obtidos via atominfo)
+DIHEDRALS = {
+    "phi_571_572": [8795, 8794, 8835, 8832],
+    "phi_572_573": [8816, 8815, 8856, 8853],
+    "phi_573_574": [8837, 8836, 8877, 8874],
+    "phi_574_575": [8858, 8857, 8898, 8895],
+    "phi_575_576": [8879, 8878, 8920, 8916],
+}
+
+def read_dihedral_value(filename):
+    with open(filename) as f:
+        for line in f:
+            if line.strip() and not line.startswith("#"):
+                return float(line.split()[1])
+    raise RuntimeError(f"Valor não encontrado em {filename}")
+
+with open(OUTFILE, "w") as out:
+    for dat in sorted(glob.glob("phi_*.dat")):
+        key = dat.replace(".dat", "")
+        if key not in DIHEDRALS:
+            continue
+
+        angle = read_dihedral_value(dat)
+
+        r1 = -180.0
+        r2 = angle - DELTA
+        r3 = angle + DELTA
+        r4 = 180.0
+
+        iat = DIHEDRALS[key]
+
+        out.write("&rst\n")
+        out.write(f" iat={iat[0]},{iat[1]},{iat[2]},{iat[3]},\n")
+        out.write(f" r1={r1:.1f}, r2={r2:.1f}, r3={r3:.1f}, r4={r4:.1f},\n")
+        out.write(f" rk2={RK:.1f}, rk3={RK:.1f},\n")
+        out.write("/\n\n")
+
+print("Arquivo dihe.restraint gerado com sucesso.")
+```
+
+Execute:
 
 ```bash
-parmed step3_input.parm7
+python write_dihe_restraint.py
 ```
 
-Liste os átomos envolvidos:
-
-```parmed
-printAtoms :571@O5,C2
-printAtoms :572@O1,C1,C2
-```
-
-Exemplo de saída:
+A saída será:
 
 ```
-8795 O5
-8794 C2
-8835 O1
-8832 C1
-8815 C2
+dihe.restraint
 ```
-
-Esses números serão usados no `dihe.restraint`.
 
 ---
 
-### Criar o arquivo `dihe.restraint`
-
-Exemplo **correto e funcional**:
-
-```text
-&rst
- iat=8795,8794,8835,8832,
- r1=-180.0, r2=-75.0, r3=-55.0, r4=180.0,
- rk2=20.0, rk3=20.0,
-/
-
-&rst
- iat=8794,8835,8832,8815,
- r1=-180.0, r2=100.0, r3=130.0, r4=180.0,
- rk2=20.0, rk3=20.0,
-/
-```
-
-Ajuste `r2` e `r3` com base nos valores medidos (±10° é o ideal).
-
-Repita para todas as ligações:
-
-* 571–572
-* 572–573
-* 573–574
-* 574–575
-* 575–576
-
-Para o resíduo terminal (`0CU`), aplique apenas os diedros possíveis.
-
----
-
-### Ativar o `dihe.restraint` no AMBER
+### Passar para a flag DISANG (em .mdin) o arquivo `dihe.restraint`
 
 Nos arquivos `step4.0_minimization.mdin` e `step4.1_equilibration.mdin`:
 
@@ -217,11 +245,11 @@ DISANG=dihe.restraint
 
 ### Boas práticas recomendadas
 
-* ✔ Use `dihe.restraint` **somente até o fim da equilibration**
-* ✔ Produção → **remova completamente**
-* ✔ `rk2 = rk3 = 10–20` é ideal
-* ✔ Nunca restrinja diedros do anel
-* ✔ Método compatível com literatura de MD de glicanos
+* Use `dihe.restraint` **somente até o fim da equilibration**
+* Produção → **remova completamente**
+* `rk2 = rk3 = 10–20` é ideal
+* Nunca restrinja diedros do anel
+* Método compatível com literatura de MD de glicanos
 
 ---
 
