@@ -309,4 +309,158 @@ export CUDA VISIBLE DEVICES=1.3
 pmemd.cuda -O -i mdin -o mdout -p prmtop -c inpcrd -r restrt -x mdcrd
 ```
 
+---
+
+## Pós-processamento de MD no AMBER (Produção)
+
+Arquivos principais:
+
+* Topologia: `step3_input.parm7`
+* Trajetória de produção: `step5_production.nc`
+* Coordenadas de referência: `step5_production.rst7`
+
+O ligante corresponde aos resíduos **1CU / 0CU** conforme o `step3_input.pdb`.
+
+---
+
+### 1. Centralização da trajetória (cpptraj)
+
+Centraliza o sistema na proteína, removendo PBC e alinhando ao primeiro frame.
+
+> Substitua `XXX` pelo último resíduo da proteína (excluindo solvente e ligante) em todas as etapas seguintes.
+
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_production.nc << EOF
+center :1-XXX mass origin
+image origin center
+rms first :1-XXX@CA
+trajout step5_centered.nc
+EOF
+```
+
+---
+
+### 2. RMSD do ligante
+
+Cálculo do RMSD do ligante ao longo do tempo (ajustando pela proteína).
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+rms Protein first :1-XXX@CA
+rms Ligand first :1CU,0CU out rmsd_ligand.dat
+EOF
+```
+
+Arquivos gerados:
+
+* `rmsd_ligand.dat`
+
+---
+
+### 3. RMSF por resíduo (proteína)
+
+Flutuação por resíduo baseada nos átomos Cα.
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+rms first :1-XXX@CA
+atomicfluct out rmsf_ca.dat :1-XXX@CA byres
+EOF
+```
+
+Arquivos gerados:
+
+* `rmsf_ca.dat`
+
+---
+
+### 4. Raio de giro (Rg)
+
+Cálculo do raio de giro da proteína.
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+radgyr :1-XXX out rg_protein.dat
+EOF
+```
+
+Arquivos gerados:
+
+* `rg_protein.dat`
+
+---
+
+### 5. Ligações de hidrogênio ligante–proteína
+
+Detecção de H-bonds entre ligante e proteína.
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+hbond HB out hbond_lig_prot.dat \
+  solventdonor :WAT \
+  donormask :1CU,0CU \
+  acceptormask :1-XXX
+EOF
+```
+
+Arquivos gerados:
+
+* `hbond_lig_prot.dat`
+
+---
+
+### 6. MM-PBSA e MM-GBSA
+
+#### 6.1 Arquivo de entrada (`mmpbsa.in`)
+
+```
+&general
+  startframe=1,
+  endframe=LAST,
+  interval=10,
+  verbose=1,
+/
+&gb
+  igb=5,
+/
+&pb
+  istrng=0.150,
+/
+```
+
+#### 6.2 Execução
+
+```bash
+MMPBSA.py -O -i mmpbsa.in -cp step3_input.parm7 -rp receptor.parm7 -lp ligand.parm7 -y step5_centered.nc
+```
+
+**Nota:** `receptor.parm7` e `ligand.parm7` devem ser previamente gerados com `ante-MMPBSA.py` ou `cpptraj`.
+
+Arquivos gerados:
+
+* `FINAL_RESULTS_MMPBSA.dat`
+
+---
+
+### 7. Clustering (conformação mais representativa)
+
+Clusterização baseada no RMSD do ligante.
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+rms first :1CU,0CU
+cluster hieragglo epsilon 2.0 linkage average \
+  clusters 5 out cluster.dat \
+  repout cluster_rep repfmt pdb
+EOF
+```
+
+Arquivos gerados:
+
+* `cluster.dat` – estatísticas dos clusters
+* `cluster_rep.c0.pdb` – estrutura representativa do cluster dominante
+
+---
+
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
