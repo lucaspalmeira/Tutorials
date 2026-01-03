@@ -1,18 +1,6 @@
 # Dinâmica molecular clássica (proteína-ligante) utilizando o AMBER
 
-Para especificar a GPU device=1 (ou seja, a segunda GPU, já que a contagem começa em 0) ao rodar pmemd.cuda no AMBER, a forma padrão e recomendada é usar a variável de ambiente CUDA_VISIBLE_DEVICES. Atualmente, a seleção da GPU a ser usada em execuções com uma única GPU é automática se as GPUs estiverem configuradas no modo exclusivo de processo (nvidia-smi -c 3), mas a abordagem recomendada é usar a variável de ambiente CUDA_VISIBLE_DEVICES para selecionar qual GPU deve ser usada.
-
-Desta forma, execute:
-
-```bash
-export CUDA_VISIBLE_DEVICES=1
-```
-
-ou
-
-```bash
-CUDA_VISIBLE_DEVICES="1" pmemd.cuda ...
-```
+> Este tutorial assume que o complexo proteína-ligante foi preparado através do servidor CHARMM-GUI em `Solution Builder`.
 
 ## Geração de `dihe.restraint` para glicanos (inulina) no AMBER
 
@@ -257,6 +245,24 @@ Este procedimento garante:
 
 * Estabilidade conformacional inicial do glicano
 * Evita colapsos não físicos
+
+---
+
+**Execução da dinâmica molecular**
+
+Para especificar a GPU device=1 (ou seja, a segunda GPU, já que a contagem começa em 0) ao rodar pmemd.cuda no AMBER, a forma padrão e recomendada é usar a variável de ambiente CUDA_VISIBLE_DEVICES. Atualmente, a seleção da GPU a ser usada em execuções com uma única GPU é automática se as GPUs estiverem configuradas no modo exclusivo de processo (nvidia-smi -c 3), mas a abordagem recomendada é usar a variável de ambiente CUDA_VISIBLE_DEVICES para selecionar qual GPU deve ser usada.
+
+Desta forma, execute:
+
+```bash
+export CUDA_VISIBLE_DEVICES=1
+```
+
+ou
+
+```bash
+CUDA_VISIBLE_DEVICES="1" pmemd.cuda ...
+```
 
 ---
 
