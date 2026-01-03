@@ -6,7 +6,7 @@
 
 Esta etapa descreve **passo a passo** como identificar um ligante glicano preparado pelo **CHARMM-GUI (Solution Builder)** e gerar manualmente um arquivo **`dihe.restraint`** para uso em simulações de dinâmica molecular no **AMBER**.
 
-O procedimento é especialmente útil quando o CHARMM-GUI **não cria automaticamente** restrições diedrais para carboidratos/polímeros (caso comum para frutanos/inulina). Caso o arquivo tenha sido criado, pule ignore esta etapa e pule para a etapa de minimização.
+O procedimento é especialmente útil quando o CHARMM-GUI **não cria automaticamente** restrições diedrais para carboidratos/polímeros (caso comum para frutanos/inulina). Caso o arquivo tenha sido criado, ignore esta etapa e pule para a etapa de minimização.
 
 Assim, o workflow descrito aqui foi aplicado a um oligômero de frutose β-(2→1) contendo os resíduos 571–576.
 
