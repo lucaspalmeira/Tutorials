@@ -86,13 +86,13 @@ atominfo :572
 
 Para cada ligação glicosídica entre os resíduos *i* e *i+1*:
 
-#### 🔹 Diedro φ (phi)
+#### Diedro φ (phi)
 
 ```
 O5(i) – C2(i) – O1(i+1) – C1(i+1)
 ```
 
-#### 🔹 Diedro ψ (psi)
+#### Diedro ψ (psi)
 
 ```
 C2(i) – O1(i+1) – C1(i+1) – C2(i+1)
@@ -140,7 +140,7 @@ Execute:
 ```bash
 cpptraj -i calc_inulin_dihedrals.in
 ```
-🔹 Serão gerados arquivos .dat com os valores dos diedros na estrutura inicial.
+* Serão gerados arquivos .dat com os valores dos diedros na estrutura inicial.
 
 Verifique os valores:
 
@@ -162,22 +162,49 @@ RK = 20.0        # força da restrição (kcal/mol·rad²)
 DELTA = 10.0     # largura do poço (± graus)
 OUTFILE = "dihe.restraint"
 
+# Diedros φ — β(2→1)-frutano obit
 # Mapeamento diedro → índices de átomos (iat)
 # (obtidos via atominfo)
 DIHEDRALS = {
-    "phi_571_572": [8795, 8794, 8835, 8832],
-    "phi_572_573": [8816, 8815, 8856, 8853],
-    "phi_573_574": [8837, 8836, 8877, 8874],
-    "phi_574_575": [8858, 8857, 8898, 8895],
-    "phi_575_576": [8879, 8878, 8920, 8916],
+    "phi_625_626": [9551, 9550, 9591, 9588],
+    "phi_626_627": [9572, 9571, 9612, 9609],
+    "phi_627_628": [9593, 9592, 9633, 9630],
+    "phi_628_629": [9614, 9613, 9654, 9651],
+    "phi_629_630": [9635, 9634, 9675, 9672],
 }
 
 def read_dihedral_value(filename):
+
     with open(filename) as f:
         for line in f:
             if line.strip() and not line.startswith("#"):
                 return float(line.split()[1])
     raise RuntimeError(f"Valor não encontrado em {filename}")
+
+def build_restraint_window(angle, delta):
+    """
+    Constrói (R1, R2, R3, R4) garantindo:
+    R1 <= R2 < R3 <= R4  e  limites dentro de [-180, 180]
+    """
+    r1 = -180.0
+    r4 =  180.0
+
+    r2 = angle - delta
+    r3 = angle + delta
+
+    if r2 < -180.0:
+        r2 = -180.0
+    if r3 > 180.0:
+        r3 = 180.0
+
+    # caso delta seja grande demais
+    if r2 >= r3:
+        raise ValueError(
+            f"Janela inválida para diedro {angle:.2f}° "
+            f"(r2={r2:.2f}, r3={r3:.2f})"
+        )
+
+    return r1, r2, r3, r4
 
 with open(OUTFILE, "w") as out:
     for dat in sorted(glob.glob("phi_*.dat")):
@@ -186,21 +213,18 @@ with open(OUTFILE, "w") as out:
             continue
 
         angle = read_dihedral_value(dat)
-
-        r1 = -180.0
-        r2 = angle - DELTA
-        r3 = angle + DELTA
-        r4 = 180.0
-
+        r1, r2, r3, r4 = build_restraint_window(angle, DELTA)
         iat = DIHEDRALS[key]
 
         out.write("&rst\n")
         out.write(f" iat={iat[0]},{iat[1]},{iat[2]},{iat[3]},\n")
-        out.write(f" r1={r1:.1f}, r2={r2:.1f}, r3={r3:.1f}, r4={r4:.1f},\n")
+        out.write(
+            f" r1={r1:.1f}, r2={r2:.1f}, r3={r3:.1f}, r4={r4:.1f},\n"
+        )
         out.write(f" rk2={RK:.1f}, rk3={RK:.1f},\n")
         out.write("/\n\n")
 
-print("Arquivo dihe.restraint gerado com sucesso.")
+print("Arquivo dihe.restraint gerado.")
 ```
 
 Execute:
