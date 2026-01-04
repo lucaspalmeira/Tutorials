@@ -480,8 +480,8 @@ Clusterização baseada no RMSD do ligante.
 ```bash
 cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
 rms first :1CU,0CU
-cluster hieragglo epsilon 2.0 linkage average \
-  clusters 5 out cluster.dat \
+cluster hieragglo clusters 3 linkage average \
+  summary cluster_summary.dat \
   repout cluster_rep repfmt pdb
 EOF
 ```
