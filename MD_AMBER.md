@@ -376,9 +376,10 @@ EOF
 Cálculo do RMSD do ligante ao longo do tempo (ajustando pela proteína).
 
 ```bash
-cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
-rms Protein first :1-XXX@CA
+cpptraj -p step3_input.parm7 << EOF
+trajin step5_centered.nc time 0.0 0.002
 rms Ligand first :1CU,0CU out rmsd_ligand.dat
+run
 EOF
 ```
 
@@ -410,8 +411,10 @@ Arquivos gerados:
 Cálculo do raio de giro da proteína.
 
 ```bash
-cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+cpptraj -p step3_input.parm7 << EOF
+trajin step5_centered.nc time 0.0 0.002
 radgyr :1-XXX out rg_protein.dat
+run
 EOF
 ```
 
@@ -426,11 +429,13 @@ Arquivos gerados:
 Detecção de H-bonds entre ligante e proteína.
 
 ```bash
-cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+cpptraj -p step3_input.parm7 << EOF
+trajin step5_centered.nc time 0.0 0.002
 hbond HB out hbond_lig_prot.dat \
   solventdonor :WAT \
   donormask :1CU,0CU \
   acceptormask :1-XXX
+run
 EOF
 ```
 
