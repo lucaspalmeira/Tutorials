@@ -378,10 +378,9 @@ EOF
 Cálculo do RMSD do ligante ao longo do tempo (ajustando pela proteína).
 
 ```bash
-cpptraj -p step3_input.parm7 << EOF
-trajin step5_centered.nc time 0.0 0.002
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+rms Protein first :1-XXX@CA
 rms Ligand first :1CU,0CU out rmsd_ligand.dat
-run
 EOF
 ```
 
