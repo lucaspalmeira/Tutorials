@@ -362,10 +362,12 @@ Centraliza o sistema na proteína, removendo PBC e alinhando ao primeiro frame.
 
 ```bash
 cpptraj -p step3_input.parm7 -y step5_production.nc << EOF
+autoimage anchor :1-XXX
 center :1-XXX mass origin
 image origin center
 rms first :1-XXX@CA
 trajout step5_centered.nc
+
 EOF
 ```
 
