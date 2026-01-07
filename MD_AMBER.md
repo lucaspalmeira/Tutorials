@@ -412,10 +412,8 @@ Arquivos gerados:
 Cálculo do raio de giro da proteína.
 
 ```bash
-cpptraj -p step3_input.parm7 << EOF
-trajin step5_centered.nc time 0.0 0.002
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
 radgyr :1-XXX out rg_protein.dat
-run
 EOF
 ```
 
@@ -430,13 +428,11 @@ Arquivos gerados:
 Detecção de H-bonds entre ligante e proteína.
 
 ```bash
-cpptraj -p step3_input.parm7 << EOF
-trajin step5_centered.nc time 0.0 0.002
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
 hbond HB out hbond_lig_prot.dat \
-  solventdonor :WAT \
-  donormask :1CU,0CU \
-  acceptormask :1-XXX
-run
+solventdonor :WAT \
+donormask :1CU,0CU \
+acceptormask :1-XXX
 EOF
 ```
 
