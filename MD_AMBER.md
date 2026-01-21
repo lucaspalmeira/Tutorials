@@ -82,9 +82,9 @@ atominfo :572
 
 ---
 
-### Definição correta dos diedros para β(2→1)-frutano
+### Definição correta dos diedros para β(2→1)-frutano (inulina)
 
-Para cada ligação glicosídica entre os resíduos *i* e *i+1*:
+Para cada ligação glicosídica entre os resíduos *i* (doador) e *i+1* (aceptor):
 
 #### Diedro φ (phi)
 
@@ -101,6 +101,28 @@ C2(i) – O1(i+1) – C1(i+1) – C2(i+1)
 Esses são os **únicos diedros que devem ser restringidos**.
 
 **Nota:** Nunca restrinja diedros internos do anel.
+
+#### Em caso da ligação ser do tipo β(2→6)-frutano (Levan):
+
+O carbono anomérico C2 do resíduo terminal (0CU) liga-se ao O6 do resíduo anterior (6CU).
+
+O eixo glicosídico é definido por:
+
+```
+O5(i) – C6(i) – O6(i) – C2(i+1)
+```
+
+Somente dois diedros devem ser controlados:
+
+#### Diedro φ (phi)
+```
+O5(i) – C6(i) – O6(i) – C2(i+1)
+```
+
+#### Diedro ψ (psi)
+```
+C6(i) – O6(i) – C2(i+1) – O5(i+1)
+```
 
 ---
 
