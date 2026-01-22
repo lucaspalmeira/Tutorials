@@ -452,6 +452,16 @@ Detecção de H-bonds entre ligante e proteína.
 ```bash
 cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
 hbond HB out hbond_lig_prot.dat \
+donormask :1CU,0CU \
+acceptormask :1-XXX
+EOF
+```
+
+Se quiser considerar ligações de hidrogênio entre solvente e ligante bem como solvente e proteína, use:
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+hbond HB out hbond_lig_prot.dat \
 solventdonor :WAT \
 donormask :1CU,0CU \
 acceptormask :1-XXX
