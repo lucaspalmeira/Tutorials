@@ -226,14 +226,20 @@ gmx grompp -f step5_production.mdp -o step5_production.tpr -c step4.1_equilibrat
 Execução:
 
 ```
-gmx mdrun -ntomp 12 -v -s step5_production -cpi -nb gpu -gpu_id 0
+gmx mdrun -v -ntomp 12 -deffnm step5_production -nb gpu -gpu_id 0
+```
+
+Se o cálculo cair, execute para retomar:
+
+```
+gmx mdrun -v -ntomp 12 -deffnm step5_production -cpi -nb gpu -gpu_id 0
 ```
 
 #### Flags explicadas
 
-* `-ntomp 12` : número de threads OpenMP
 * `-v` : modo verboso
-* `-s` : arquivo `.tpr`
+* `-ntomp 12` : número de threads OpenMP
+* `-deffnm` : nome base para todos os arquivos de saída
 * `-cpi` : continua a partir de um checkpoint
 * `-nb gpu` : cálculo de interações não ligadas na GPU
 * `-gpu_id 0` : seleciona a GPU 0
