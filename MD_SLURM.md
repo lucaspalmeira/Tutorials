@@ -148,6 +148,9 @@ Dentro do script:
 * Adicione `set -euo pipefail` para falhar corretamente quando algo dá errado
 * Sempre imprima informações úteis (hostname, data, variáveis SLURM, GPU visível)
 
+* Adicione o seu nome em `#SBATCH --job-name=gmx_min_<usuario>` para manter o controle
+  Exeplo: `#SBATCH --job-name=gmx_min_joao`
+  
 ---
 
 # 5.1) GROMACS — Minimização
