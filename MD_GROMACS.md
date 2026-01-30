@@ -276,6 +276,8 @@ Remove quebras artificiais causadas pela caixa periódica:
 gmx trjconv -s step5_production.tpr -f traj_comp.xtc -o traj_noPBC.xtc -pbc mol
 ```
 
+Selecionar o grupo 0 (System)
+
 ---
 
 ### 7.2 Centralização do sistema
@@ -286,6 +288,8 @@ Centraliza a proteína (ou complexo) na caixa de simulação:
 gmx trjconv -s step5_production.tpr -f traj_noPBC.xtc -o traj_center.xtc -center
 ```
 
+Selecionar 1 (Protein) e depois 0 (System)
+
 ---
 
 ### 7.3 Ajuste rotacional/translacional (fitting)
@@ -295,6 +299,8 @@ Remove movimentos globais para análises estruturais:
 ```
 gmx trjconv -s step5_production.tpr -f traj_center.xtc -o traj_fit.xtc -fit rot+trans
 ```
+
+Selecionar 4 (Backbone) e depois 0 (System)
 
 ---
 
@@ -320,7 +326,9 @@ Avalia a estabilidade estrutural ao longo do tempo em relação a uma estrutura 
 gmx rms -s step5_production.tpr -f traj_fit.xtc -n index.ndx -o rmsd.xvg
 ```
 
-Normalmente, usa-se a estrutura inicial ou média como referência e grupos como **Protein** ou **Backbone**.
+Se o RMSD for da proteína: selecionar 1 (Protein) e depois 1 (Protein). Se o RMSD for do ligante: selecionar 13 (LIG) e depois 13 (LIG)
+
+Para proteína, normalmente usa-se a estrutura inicial ou média como referência e grupos como **Protein** ou **Backbone**.
 
 ---
 
@@ -332,6 +340,8 @@ Mede a flexibilidade média de cada resíduo ao longo da simulação.
 gmx rmsf -s step5_production.tpr -f traj_fit.xtc -n index.ndx -o rmsf_residue.xvg -res
 ```
 
+Selecionar 1 (Protein)
+
 ---
 
 ### 7.3 Raio de Giro (Radius of Gyration – Rg)
@@ -342,6 +352,8 @@ Avalia o grau de compactação da estrutura ao longo do tempo.
 gmx gyrate -s step5_production.tpr -f traj_fit.xtc -n index.ndx -o gyrate.xvg
 ```
 
+Selecionar 1 (Protein)
+
 ---
 
 ### 7.4 Ligações de Hidrogênio (Hydrogen Bonds)
@@ -349,6 +361,8 @@ gmx gyrate -s step5_production.tpr -f traj_fit.xtc -n index.ndx -o gyrate.xvg
 ```
 gmx hbond -s step5_production.tpr -f traj_fit.xtc -n index.ndx -num hbonds.xvg
 ```
+
+Selecionar 1 (Protein) e depois 13 (LIG)
 
 ---
 
