@@ -476,34 +476,118 @@ Arquivos gerados:
 
 ### 6. MM-PBSA e MM-GBSA
 
-#### 6.1 Arquivo de entrada (`mmpbsa.in`)
+#### Cálculo de Energia Livre de Ligação por MMPBSA (AMBER)
+Visão Geral do Método
+
+A técnica MM/PBSA (ou MM/GBSA) permite estimar a energia livre de ligação de um complexo receptor-ligante a partir de snapshots de uma simulação de dinâmica molecular. Usaremos o script MMPBSA.py do AmberTools para calcular a energia livre de binding (ΔG_bind) e também decompor as contribuições energéticas por resíduo. Esse procedimento requer três topologias separadas (complexo, receptor e ligante) derivadas da topologia do sistema completo, além de um arquivo de trajetória e um arquivo de controle de parâmetros para o cálculo.
+
+
+##### Preparação das Topologias “Secas” (sem solvente)
+
+Antes de executar o MMPBSA, precisamos gerar arquivos de topologia (.prmtop) para: (1) o complexo proteína-ligante sem solvente, (2) a proteína (receptor) isolada, e (3) o ligante isolado. Como você já possui a topologia completa do sistema solvado (step3_input.parm7), utilizaremos o utilitário ante-MMPBSA.py para criar essas topologias filtradas, removendo água e íons e separando receptor e ligante.
+
+*Passo 1* – Identificar o ligante no sistema: Abra o PDB ou a topologia do complexo e identifique quais resíduos correspondem ao ligante. Por exemplo, se o seu ligante for uma molécula distinta das cadeias proteicas (como uma pequena molécula ou polímero de açúcar), descubra o intervalo de resíduos ou o nome do residuário do ligante. Suponha, por exemplo, que a proteína contenha resíduos 1-630 e o ligante seja o resíduo 631 (ou um pequeno intervalo no final da numeração).
+
+*Passo 2* – Executar o ante-MMPBSA.py: Com a informação acima, use o comando ante-MMPBSA.py para gerar três topologias secas. Por exemplo:
+
+```bash
+ante-MMPBSA.py -p step3_input.parm7 \
+               -c complex.prmtop \
+               -r receptor.prmtop \
+               -l ligand.prmtop \
+               -m ':1-630' \
+               -s ':WAT,Na+,Cl-' \
+               --radii=mbondi2
+```
+
+No exemplo acima, assumimos que :1-630 define a máscara Amber dos resíduos do receptor (proteína), de forma que o restante dos átomos (após remover solvente) será tratado como ligante. Ajuste a máscara -m de acordo com o seu sistema (pode ser um intervalo de resíduos ou identificador de cadeia do receptor). A opção -s ':WAT,Na+,Cl-' indica os átomos a remover (strip) da topologia original – aqui removemos moléculas de água (WAT) e íons sódio e cloreto. A opção --radii=mbondi2 define os raios atômicos (modelo Bondi modificado) adequados para cálculos de PB. Com este comando único, serão gerados os arquivos complex.prmtop (complexo sem solvente), receptor.prmtop (proteína) e ligand.prmtop (ligante). Dica: Verifique se o script identificou corretamente o receptor e ligante; ele normalmente imprime a suposição de máscara, mas usando a opção -m garantimos a seleção correta.
+
+
+##### Configurando o Arquivo de Input do MMPBSA
+
+Crie um arquivo de texto (por exemplo, mmpbsa.in) que define os parâmetros do cálculo MM/PBSA. O formato segue o estilo dos arquivos de entrada do sander do AMBER, contendo vários namelists começando com & e terminando com /. Para nosso objetivo, incluiremos seções para executar tanto o cálculo GB quanto PB em um único passo, e ativaremos a decomposição por resíduo. Abaixo um exemplo de input:
 
 ```
 &general
-  startframe=1,
-  endframe=LAST,
-  interval=10,
-  verbose=1,
+   interval=1,           # usar todos os frames; ajuste se quiser pular frames
+   verbose=1, 
+   keep_files=0,         # 0 para descartar arquivos temporários (_MMPBSA_*), ou 2 para mantê-los
+   strip_mask=":WAT,Na+,Cl-"
 /
 &gb
-  igb=5,
+   igb=5,                # modelo Generalized Born (OBC II):contentReference[oaicite:5]{index=5}
+   saltcon=0.100         # concentração salina 0.1 M
 /
 &pb
-  istrng=0.150,
+   istrng=0.100          # força iônica 0.1 M no cálculo PB:contentReference[oaicite:6]{index=6}
+/
+&decomp
+   idecomp=1,            # decomposição por resíduo (1 ou 2 são per-residue):contentReference[oaicite:7]{index=7}
+   dec_verbose=1         # informações detalhadas de decomposição
 /
 ```
 
-#### 6.2 Execução
+Explicação dos parâmetros principais:
+
+* *&general*: Aqui definimos configurações gerais. interval=1 indica que cada frame da trajetória será usado (poderia ajustar, e.g. interval=5 para usar um a cada 5 frames). endframe poderia ser usado para limitar até um frame específico, mas caso não seja definido, o padrão é usar todos os frames disponíveis. A opção strip_mask=":WAT,Na+,Cl-" é uma camada extra de segurança para ignorar solvente/íons da trajetória (o script já os removerá usando as topologias secas, mas incluímos por garantia). keep_files=0 evita salvar arquivos temporários extensos (MMPBSA*), deixando apenas os resultados finais. verbose=1 aumenta a verbosidade das saídas.
+
+* *&gb*: Configura o cálculo MM-GBSA (solvente implícito Generalized Born). Aqui escolhemos igb=5 (modelo GB OBC(II)) com saltcon=0.1 (equivalente a solução de 0,1 M de sal). (Nota: igb=2 (OBC(I)) também é comum; ambos são modelos GB disponíveis.)
+
+* *&pb*: Configura o cálculo MM-PBSA (solvente implícito Poisson-Boltzmann). Usamos istrng=0.100 para definir força iônica de 0,1 M no solver PB. (Outros parâmetros PB, como tamanho de malha, usam padrões internos do Amber PBSA.)
+
+* *&decomp*: Ativa a decomposição de energia por resíduo. Definimos idecomp=1 para decomposição por resíduo padrão (que inclui interações 1-4 de forma separada). A configuração dec_verbose=1 faz o script imprimir detalhes de cada componente de energia por resíduo no arquivo de decomposição. (Valores idecomp=1 ou 2 são usados para decomposição por resíduo; 2 agrupa as interações 1-4 dentro dos termos eletrostático e van der Waals. Ambos fornecem resultados de contribuição por resíduo semelhantes.) Observação: Devido a limitações do Amber, o termo de solvação não polar no PB não é decomposto por resíduo – esse componente aparecerá zero ou ausente na lista por resíduo para PB (enquanto para GB todos os termos são decompostos normalmente).
+
+Com o arquivo de input pronto, revise para garantir que as máscaras (se usadas) correspondem ao seu sistema. No nosso exemplo, fornecemos strip_mask global para remover solvente. O script MMPBSA.py também tenta adivinhar máscaras de receptor e ligante a partir das topologias fornecidas, mas como geramos topologias separadas, essa etapa interna serve apenas para referência.
+
+
+##### Executando o Cálculo MMPBSA
+
+Agora podemos rodar o cálculo de duas formas: em modo serial (um processo) ou em modo paralelo (MPI), já que você possui a versão MPI (MMPBSA.py.MPI) instalada. A escolha depende do tamanho da trajetória e dos recursos disponíveis – para 100 ns de simulação, o modo paralelo pode acelerar significativamente o processamento dividindo os frames entre vários núcleos.
+
+Modo Serial (único processo)
+
+Para executar em modo serial, use o script MMPBSA.py diretamente. Exemplo de comando no terminal dentro do diretório de trabalho:
 
 ```bash
-MMPBSA.py -O -i mmpbsa.in -cp step3_input.parm7 -rp receptor.parm7 -lp ligand.parm7 -y step5_centered.nc
+MMPBSA.py -O -i mmpbsa.in \
+          -o FINAL_RESULTS_MMPBSA.dat \
+          -do FINAL_DECOMP_MMPBSA.dat \
+          -sp step3_input.parm7 \
+          -cp complex.prmtop -rp receptor.prmtop -lp ligand.prmtop \
+          -y step5_production.nc
 ```
 
-**Nota:** `receptor.parm7` e `ligand.parm7` devem ser previamente gerados com `ante-MMPBSA.py` ou `cpptraj`.
 
-Arquivos gerados:
+Descrição dos argumentos: -O permite sobrescrever arquivos de saída existentes. -i especifica o arquivo de input que criamos (mmpbsa.in). -o define o nome do arquivo de resultados de energia média (nesse caso, escolhemos FINAL_RESULTS_MMPBSA.dat). -do define o nome do arquivo de saída da decomposição por resíduo (listaremos as contribuições energéticas de cada resíduo nesse arquivo). Em seguida, -sp aponta para a topologia do sistema solvado original (usamos step3_input.parm7 como solvated complex topology para que o script saiba lidar com a trajetória contendo solvente). As opções -cp, -rp e -lp fornecem as topologias secas do complexo, receptor e ligante, respectivamente, que geramos no passo anterior. Finalmente, -y aponta para o arquivo de trajetória da simulação (step5_production.nc).
 
-* `FINAL_RESULTS_MMPBSA.dat`
+*Dica*: O MMPBSA.py aceita vários arquivos de trajetória ou uso de curingas (*). Se sua simulação estiver dividida em múltiplos arquivos (por exemplo, prod1.nc, prod2.nc, ...), você pode usar -y "*.nc" para ler todos. No nosso caso, temos um único step5_production.nc. Certifique-se de que o AmberTools reconhece o formato .nc (NetCDF); versões atuais do AmberTools geralmente suportam NetCDF nativamente.
+
+Ao rodar o comando acima, o script executará iterativamente cálculos de energia para cada frame (usando sander internamente). Mensagens de progresso serão exibidas no terminal (stdout) e eventuais avisos/erros em stderr. Ao finalizar, você terá os arquivos de saída especificados.
+
+Modo Paralelo (MPI)
+
+Para aproveitar seu CPU multi-core (Ryzen 9 7950X3D) e acelerar o cálculo, você pode rodar o MMPBSA em paralelo. Certifique-se de ter um ambiente MPI configurado (por exemplo, OpenMPI ou MPICH) e use o executável MMPBSA.py.MPI. O comando é similar, mas prefixado por mpirun -np <N> onde <N> é o número de processos desejado. Por exemplo, para rodar com 16 núcleos em paralelo:
+
+```bash
+mpirun -np 16 MMPBSA.py.MPI -O -i mmpbsa.in \
+          -o FINAL_RESULTS_MMPBSA.dat \
+          -do FINAL_DECOMP_MMPBSA.dat \
+          -sp step3_input.parm7 \
+          -cp complex.prmtop -rp receptor.prmtop -lp ligand.prmtop \
+          -y step5_production.nc > mmpbsa_progress.log 2>&1
+```
+
+No exemplo acima, redirecionamos a saída para mmpbsa_progress.log para guardar o log (recomendado, pois em execução paralela as mensagens podem ser extensas). Você pode acompanhar esse log para ver o andamento. O resultado final (arquivos .dat) será o mesmo produzido no modo serial.
+
+Observações sobre paralelização: O script MMPBSA.py.MPI divide os frames da trajetória entre os processos MPI para calcular as energias em paralelo. Ele funciona de forma mais eficiente quando o número de frames é múltiplo do número de processos, distribuindo carga igual entre eles. Porém, isso não é estritamente necessário – caso não seja múltiplo, o programa distribui os frames restantes entre os processos iniciais. Importante: não use mais processos do que o número de frames, pois isso causaria erro. Em geral, com ~100 ns de simulação, você terá milhares de frames, então utilizar 16 ou até 32 processos deve ser viável dado que você possui 32 threads de CPU. Ajuste -np conforme seus recursos e note que o uso de muitos processos aumentará a memória usada (cada processo carrega uma cópia parcial dos dados). Seu hardware de 128 GB RAM deve suportar confortavelmente esse cálculo.
+
+##### Análise dos Resultados
+
+Após a execução, o arquivo FINAL_RESULTS_MMPBSA.dat conterá um resumo das componentes de energia média do complexo, receptor e ligante, bem como as diferenças calculadas (Complexo - Receptor - Ligante) que correspondem à energia livre de ligação estimada. Por exemplo, você verá seções para GB e PB separadamente (pois calculamos ambos). Cada seção lista termos como energia de van der Waals (VDWAALS), eletrostática de Coulomb (EEL), solvatção polar (EGB para GB, EPB para PB) e solvatção não polar (ESURF), com seus valores médios e desvios padrão. A última parte de cada seção mostrará as Diferenças (Complex - Receptor - Ligand) para cada termo e a soma total (TOTAL), que é a ΔG_binding estimada. Uma ΔG negativa indica uma ligação favorável (espontânea), enquanto positiva indica desfavorável. Lembre-se de que não incluímos entropia conformacional nesse cálculo, então o valor obtido corresponde principalmente à diferença de entalpia livre; para estimar a energia livre absoluta de ligação, normalmente seria necessário incluir o termo entrópico (via análise de modos normais, etc.), mas isso pode ser omitido para comparar compostos ou mutantes.
+
+No arquivo FINAL_DECOMP_MMPBSA.dat (gerado porque usamos -do e ativamos &decomp), você encontrará as contribuições energéticas por resíduo. Cada linha tipicamente corresponde a um resíduo do receptor ou do ligante, indicando, por exemplo, energia van der Waals, eletrostática, solvatção polar e não polar associadas àquele resíduo para a energia de interação. Esses valores representam quanto cada resíduo contribui para a energia de ligação (valores negativos significam que o resíduo favorece a ligação, positivos desfavorecem). Como mencionado, a contribuição não polar de PB pode não aparecer por resíduo devido a limitações do Amber, mas o efeito desse termo geralmente é pequeno e pode ser considerado de forma global. Use esse arquivo para identificar quais aminoácidos do receptor (ou átomos do ligante) são mais importantes energeticamente para a interação.
+
+Por fim, você terá realizado com sucesso o cálculo de energia livre de binding tanto via MM-GBSA quanto MM-PBSA, em modo serial ou paralelo, e obtido a decomposição por resíduo para uma análise detalhada. Com esses resultados, é possível inferir a estabilidade relativa do complexo proteína-ligante e os hot-spots de interação ao nível de resíduo.
 
 ---
 
