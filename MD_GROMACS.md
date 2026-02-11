@@ -366,66 +366,104 @@ Selecionar 1 (Protein) e depois 13 (LIG)
 
 ---
 
-## 9. Cálculo de Energia Livre com GMX_MMPBSA (MM/PBSA e MM/GBSA)
+## 9. Cálculo de Energia Livre com gmx_MMPBSA
 
 O **GMX_MMPBSA** permite estimar energias livres de ligação via **MM/PBSA** ou **MM/GBSA**.
 
-### 9.1 MM/PBSA
+### Entalpia
+
+No arquivo de entrada `mmpbsa_entalpia.in`:
 
 ```
-gmx_MMPBSA -O -i mmpbsa.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cp topol.top -o FINAL_RESULTS_MMPBSA.dat
-```
+Sample input file for PB calculation
+This input file is meant to show only that gmx_MMPBSA works. Although, we tried to use the input files as recommended
+in the Amber manual, some parameters have been changed to perform more expensive calculations in a reasonable amount of time. Feel free to change the
+parameters according to what is better for your system.
 
----
-
-### 9.2 MM/GBSA
-
-Para MM/GBSA, utilize a seção &gb no arquivo de entrada:
-
-```
 &general
-   startframe=1,
-   endframe=5000,
-   interval=10,
+sys_name="Prot-Lig-CHARMM",
+startframe=1,
+endframe=9999999999,
+interval=1,
+# In gmx_MMPBSA v1.5.0 we have added a new PB radii set named charmm_radii. This radii set should be used only
+# with systems prepared with CHARMM force fields. Uncomment the line below to use charmm_radii set
+#PBRadii=7,
+/
+&pb
+# radiopt=0 is recommended which means using radii from the prmtop file for both the PB calculation and for the NP
+# calculation
+istrng=0.15, fillratio=4.0, radiopt=0
+/
+
+```
+
+Execução:
+
+```
+mpirun -np 12 gmx_MMPBSA -O -i mmpbsa_entalpia.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cg 1 13 -cp topol.top -o FINAL_RESULTS_MMPBSA_entalpia.dat -eo FINAL_RESULTS_MMPBSA_entalpia.CSV
+```
+
+
+### Entropia
+
+No arquivo de entrada `mmpbsa_entropia.in`:
+
+```
+Sample input file for entropy calculations (IE)
+This input file is meant to show only that gmx_MMPBSA works. Althought,
+we tried to used the input files as recommended in the Amber manual,
+some parameters have been changed to perform more expensive calculations
+in a reasonable amount of time. Feel free to change the parameters 
+according to what is better for your system.
+
+&general
+sys_name="IE",
+startframe=1,
+endframe=99999999999,
+#Interaction Entropy (IE)(https://pubs.acs.org/doi/abs/10.1021/jacs.6b02682) approximation
+interaction_entropy=1, ie_segment=50, temperature=323.15
 /
 
 &gb
-   igb=5,
-   saltcon=0.15,
+igb=2, saltcon=0.150,
 /
 ```
 
 Execução:
 
 ```
-gmx_MMPBSA -O -i mmpbsa_gb.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cp topol.top -o FINAL_RESULTS_MMGBSA.dat
+mpirun -np 12 gmx_MMPBSA -O -i mmpbsa_entropia.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cg 1 13 -cp topol.top -o FINAL_RESULTS_MMPBSA_entropia.dat -eo FINAL_RESULTS_MMPBSA_entropia.CSV
 ```
 
----
-
-### 9.3 Decomposição de Energia por Resíduo
+### Decomposição de Energia por Resíduo
 
 Permite identificar quais resíduos mais contribuem para a energia de ligação.
 
-No arquivo de entrada:
+No arquivo de entrada `decomposition.in`:
 
 ```
+Sample input file for decomposition analysis
+Make sure to include at least one residue from both the receptor
+and ligand in the print_res mask of the &decomp section.
+http://archive.ambermd.org/201308/0075.html. This is automally
+guaranteed when using "within" keyword.
+
+&general
+startframe=1, endframe=9999999999999, interval=1,
+/
+
+&gb
+igb=5, saltcon=0.150,
+/
+
 &decomp
-   idecomp=1,
-   print_res="all",
+idecomp=2, dec_verbose=3,
+print_res="within 6"
 /
 ```
 
 Execução:
 
 ```
-gmx_MMPBSA -O -i mmpbsa_decomp.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cp topol.top
-```
-
-As saídas incluem contribuições eletrostáticas, de van der Waals e solvatação por resíduo.
-
----
-
-```
-gmx_MMPBSA -O -i mmpbsa.in -cs step5_production.tpr -ct traj_comp.xtc -ci index.ndx -cp topol.top -o FINAL_RESULTS_MMPBSA.dat
+mpirun -np 12 gmx_MMPBSA -O -i decomposition.in -cs step5_production.tpr -ct traj_fit.xtc -ci index.ndx -cg 1 13 -cp topol.top -o FINAL_RESULTS_MMPBSA_decomposition.dat -eo FINAL_RESULTS_MMPBSA_decomposition.CSV
 ```
