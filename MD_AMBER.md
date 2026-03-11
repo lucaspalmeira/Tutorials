@@ -346,6 +346,8 @@ Adicione a flag `ig` no arquivo `step5_production.mdin` para garantir trajetóri
 ig = -1
 ```
 
+Após isso, execute no terminal ou crie um arquivo bash (.sh).
+
 ```bash
 # Produção (replicatas)
 for i in 1 2 3
