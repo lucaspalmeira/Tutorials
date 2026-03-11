@@ -338,6 +338,32 @@ pmemd.cuda -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_mini
 pmemd.cuda -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
 ```
 
+#### Produção em replicatas
+
+Adicione a flag `ig` no arquivo `step5_production.mdin` para garantir trajetórias diferentes.
+
+```
+ig = -1
+```
+
+```bash
+# Produção (replicatas)
+for i in 1 2 3
+do
+    echo "Rodando replicata $i"
+
+    pmemd.cuda -O \
+    -i step5_production.mdin \
+    -p step3_input.parm7 \
+    -c step4.1_equilibration.rst7 \
+    -o step5_production_${i}.mdout \
+    -r step5_production_${i}.rst7 \
+    -inf step5_production_${i}.mdinfo \
+    -x step5_production_${i}.nc
+
+done
+```
+
 ---
 
 ## Executando Simulações Aceleradas por GPU
