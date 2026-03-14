@@ -53,10 +53,10 @@ def ensure_output_dir(path=OUTPUT_DIR):
 
 
 def find_replicate_dirs(base="."):
-    """Find directories like analise_replica_1, analise_replica_2, ..."""
+    """Find directories like replicate_analysis_1, replicate_analysis_2, ..."""
     base = Path(base)
     dirs = sorted(
-        [d for d in base.glob("analise_replica_*") if d.is_dir()],
+        [d for d in base.glob("replicate_analysis_*") if d.is_dir()],
         key=lambda x: int(re.search(r"(\d+)$", x.name).group(1))
         if re.search(r"(\d+)$", x.name) else x.name
     )
@@ -66,6 +66,7 @@ def find_replicate_dirs(base="."):
 def build_time_axis(n_points):
     """
     Convert point index to time in ns.
+
     Priority:
     1) TIME_PER_FRAME_NS
     2) TOTAL_TIME_NS
@@ -310,7 +311,7 @@ def load_hbond_timeseries(filepath):
     Expected behavior:
     - If file has >= 2 numeric columns, use the 2nd column as the number of H-bonds
     - If file has only 1 numeric column, use it directly
-    - X axis is reconstructed as Time (ns) from the number of points
+    - X axis is reconstructed as time (ns) from the number of points
     """
     df = load_numeric_dat(filepath)
     if df.empty:
@@ -433,7 +434,7 @@ def main():
     rep_dirs = find_replicate_dirs(base)
 
     if not rep_dirs:
-        print("No analise_replica_* directories were found.")
+        print("No replicate_analysis_* directories were found.")
         return
 
     print(f"Replicates found: {[d.name for d in rep_dirs]}")
