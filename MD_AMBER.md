@@ -502,7 +502,27 @@ Arquivos gerados:
 
 ---
 
-### 6. MM-PBSA e MM-GBSA
+### 7. Clustering (conformação mais representativa)
+
+Clusterização baseada no RMSD do ligante.
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
+rms first :1CU,0CU
+cluster hieragglo clusters 3 linkage average \
+  summary cluster_summary.dat \
+  repout cluster_rep repfmt pdb
+EOF
+```
+
+Arquivos gerados:
+
+* `cluster.dat` – estatísticas dos clusters
+* `cluster_rep.c0.pdb` – estrutura representativa do cluster dominante
+
+---
+
+### 7. MM-PBSA e MM-GBSA
 
 #### Cálculo de Energia Livre de Ligação por MMPBSA (AMBER)
 Visão Geral do Método
@@ -616,26 +636,6 @@ Após a execução, o arquivo FINAL_RESULTS_MMPBSA.dat conterá um resumo das co
 No arquivo FINAL_DECOMP_MMPBSA.dat (gerado porque usamos -do e ativamos &decomp), você encontrará as contribuições energéticas por resíduo. Cada linha tipicamente corresponde a um resíduo do receptor ou do ligante, indicando, por exemplo, energia van der Waals, eletrostática, solvatção polar e não polar associadas àquele resíduo para a energia de interação. Esses valores representam quanto cada resíduo contribui para a energia de ligação (valores negativos significam que o resíduo favorece a ligação, positivos desfavorecem). Como mencionado, a contribuição não polar de PB pode não aparecer por resíduo devido a limitações do Amber, mas o efeito desse termo geralmente é pequeno e pode ser considerado de forma global. Use esse arquivo para identificar quais aminoácidos do receptor (ou átomos do ligante) são mais importantes energeticamente para a interação.
 
 Por fim, você terá realizado com sucesso o cálculo de energia livre de binding tanto via MM-GBSA quanto MM-PBSA, em modo serial ou paralelo, e obtido a decomposição por resíduo para uma análise detalhada. Com esses resultados, é possível inferir a estabilidade relativa do complexo proteína-ligante e os hot-spots de interação ao nível de resíduo.
-
----
-
-### 7. Clustering (conformação mais representativa)
-
-Clusterização baseada no RMSD do ligante.
-
-```bash
-cpptraj -p step3_input.parm7 -y step5_centered.nc << EOF
-rms first :1CU,0CU
-cluster hieragglo clusters 3 linkage average \
-  summary cluster_summary.dat \
-  repout cluster_rep repfmt pdb
-EOF
-```
-
-Arquivos gerados:
-
-* `cluster.dat` – estatísticas dos clusters
-* `cluster_rep.c0.pdb` – estrutura representativa do cluster dominante
 
 ---
 
