@@ -522,6 +522,11 @@ Arquivos gerados:
 
 ---
 
+O usuário poderá realizar as análises pós-produção para as replicatas utilizando o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/run_cpptraj_replicatas.sh>run_cpptraj_replicatas.sh
+</a>
+
+---
+
 ### 7. MM-PBSA e MM-GBSA
 
 #### Cálculo de Energia Livre de Ligação por MMPBSA (AMBER)
