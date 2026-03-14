@@ -502,7 +502,7 @@ Arquivos gerados:
 
 ---
 
-### 7. Clustering (conformação mais representativa)
+### 6. Clustering (conformação mais representativa)
 
 Clusterização baseada no RMSD do ligante.
 
