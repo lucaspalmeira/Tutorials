@@ -2,6 +2,9 @@
 
 set -e
 
+sed -e "s/FC/1.0/g" dihe.restraint > step4.0_minimization.rest
+sed -e "s/FC/1.0/g" dihe.restraint > step4.1_equilibration.rest
+
 # Minim
 pmemd.cuda -O \
 -i step4.0_minimization.mdin \
