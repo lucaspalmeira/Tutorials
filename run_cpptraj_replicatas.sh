@@ -2,74 +2,73 @@
 
 set -euo pipefail
 
-# =========================
-# CONFIGURAÇÕES
-# =========================
+# CONFIGURATION
 
-# Topologia
+# Topology file
 PARM="step3_input.parm7"
 
-# Último resíduo da proteína (SUBSTITUA AQUI)
-# Exemplo: se a proteína vai do resíduo 1 ao 412, use 412
+# Last protein residue (REPLACE HERE)
+# Example: if the protein goes from residue 1 to 412, use 412
 PROT_LAST_RES="XXX"
 
-# Máscara da proteína
+# Protein mask
 PROT_MASK=":1-${PROT_LAST_RES}"
 
-# Máscara do ligante
+# Ligand mask
 LIG_MASK=":1CU,0CU"
 
-# Número de clusters
+# Number of clusters
 NCLUSTERS=3
 
-# Se quiser incluir solvente nas análises de H-bond, coloque "yes"
+# To include solvent in H-bond analyses, set this to "yes"
 INCLUDE_SOLVENT_HBOND="no"
 
-# Nome do solvente no sistema
+# Solvent mask in the system
 SOLVENT_MASK=":WAT"
 
-# Replicatas
-REPLICAS=(1 2 3)
+# Replicates
+REPLICATES=(1 2 3)
 
-# CHECAGENS
+# =========================
+# CHECKS
+# =========================
 
 if [[ ! -f "$PARM" ]]; then
-    echo "ERRO: arquivo de topologia não encontrado: $PARM"
+    echo "ERROR: topology file not found: $PARM"
     exit 1
 fi
 
 if [[ "$PROT_LAST_RES" == "XXX" ]]; then
-    echo "ERRO: substitua PROT_LAST_RES=\"XXX\" pelo último resíduo da proteína."
+    echo "ERROR: replace PROT_LAST_RES=\"XXX\" with the last protein residue."
     exit 1
 fi
 
 if ! command -v cpptraj &>/dev/null; then
-    echo "ERRO: cpptraj não está no PATH."
+    echo "ERROR: cpptraj is not available in PATH."
     exit 1
 fi
 
-# LOOP DAS REPLICATAS
+# REPLICATE LOOP
 
-for i in "${REPLICAS[@]}"; do
+for i in "${REPLICATES[@]}"; do
     TRAJ="step5_production_${i}.nc"
-    OUTDIR="analise_replica_${i}"
+    OUTDIR="replicate_analysis_${i}"
 
-    echo "======================================"
-    echo "Processando replicata ${i}"
-    echo "Trajetória: ${TRAJ}"
-    echo "Saída: ${OUTDIR}"
-    echo "======================================"
+    echo "--------------------------------------"
+    echo "Processing replicate ${i}"
+    echo "Trajectory: ${TRAJ}"
+    echo "Output: ${OUTDIR}"
+    echo "--------------------------------------"
 
     if [[ ! -f "$TRAJ" ]]; then
-        echo "AVISO: trajetória não encontrada: $TRAJ"
-        echo "Pulando replicata ${i}..."
+        echo "WARNING: trajectory not found: $TRAJ"
+        echo "Skipping replicate ${i}..."
         continue
     fi
 
     mkdir -p "$OUTDIR"
 
-    # Centralização da trajetória
-    
+    # Trajectory centering
     cat > "${OUTDIR}/01_centering.in" << EOF
 autoimage anchor ${PROT_MASK}
 center ${PROT_MASK} mass origin
@@ -81,8 +80,7 @@ EOF
     cpptraj -p "$PARM" -y "$TRAJ" -i "${OUTDIR}/01_centering.in" \
         > "${OUTDIR}/01_centering.log" 2>&1
 
-    # RMSD do ligante
-    
+    # Ligand RMSD
     cat > "${OUTDIR}/02_rmsd_ligand.in" << EOF
 rms Protein first ${PROT_MASK}@CA
 rms Ligand first ${LIG_MASK} out ${OUTDIR}/rmsd_ligand.dat
@@ -91,9 +89,7 @@ EOF
     cpptraj -p "$PARM" -y "${OUTDIR}/step5_centered_${i}.nc" -i "${OUTDIR}/02_rmsd_ligand.in" \
         > "${OUTDIR}/02_rmsd_ligand.log" 2>&1
 
-    
-    # RMSF por resíduo (Cα)
-    
+    # Per-residue RMSF (Cα)
     cat > "${OUTDIR}/03_rmsf_ca.in" << EOF
 rms first ${PROT_MASK}@CA
 atomicfluct out ${OUTDIR}/rmsf_ca.dat ${PROT_MASK}@CA byres
@@ -102,8 +98,7 @@ EOF
     cpptraj -p "$PARM" -y "${OUTDIR}/step5_centered_${i}.nc" -i "${OUTDIR}/03_rmsf_ca.in" \
         > "${OUTDIR}/03_rmsf_ca.log" 2>&1
 
-    # Raio de giro
-    
+    # Radius of gyration
     cat > "${OUTDIR}/04_radgyr.in" << EOF
 radgyr ${PROT_MASK} out ${OUTDIR}/rg_protein.dat
 EOF
@@ -111,8 +106,7 @@ EOF
     cpptraj -p "$PARM" -y "${OUTDIR}/step5_centered_${i}.nc" -i "${OUTDIR}/04_radgyr.in" \
         > "${OUTDIR}/04_radgyr.log" 2>&1
 
-    # H-bonds ligante–proteína
-    
+    # Ligand–protein H-bonds
     if [[ "$INCLUDE_SOLVENT_HBOND" == "yes" ]]; then
         cat > "${OUTDIR}/05_hbond.in" << EOF
 hbond HB out ${OUTDIR}/hbond_lig_prot.dat \
@@ -131,8 +125,7 @@ EOF
     cpptraj -p "$PARM" -y "${OUTDIR}/step5_centered_${i}.nc" -i "${OUTDIR}/05_hbond.in" \
         > "${OUTDIR}/05_hbond.log" 2>&1
 
-    # Clustering do ligante
-    
+    # Ligand clustering
     cat > "${OUTDIR}/06_cluster.in" << EOF
 rms first ${LIG_MASK}
 cluster hieragglo clusters ${NCLUSTERS} linkage average \
@@ -144,8 +137,8 @@ EOF
     cpptraj -p "$PARM" -y "${OUTDIR}/step5_centered_${i}.nc" -i "${OUTDIR}/06_cluster.in" \
         > "${OUTDIR}/06_cluster.log" 2>&1
 
-    echo "Replicata ${i} finalizada."
+    echo "Replicate ${i} completed."
     echo
 done
 
-echo "Todas as análises concluídas."
+echo "All analyses completed."
