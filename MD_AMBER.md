@@ -523,7 +523,17 @@ Arquivos gerados:
 ---
 
 O usuário poderá realizar as análises pós-produção para as replicatas utilizando o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/run_cpptraj_replicatas.sh>run_cpptraj_replicatas.sh
-</a>
+</a>. 
+
+```bash
+bash run_cpptraj_replicatas.sh
+```
+
+Também o usuário poderá executar o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/plot_md_replicates.py>plot_md_replicates.py</a> para criar os gráficos (já possuíndo a média e desvio padrão) de RMSD, RMSF, raio de giro e número de ligações de hidrogênio entre ligante e proteína.
+
+```bash
+python plot_md_replicates.py
+```
 
 ---
 
