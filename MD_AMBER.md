@@ -338,6 +338,14 @@ pmemd.cuda -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_mini
 pmemd.cuda -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
 ```
 
+Nota: Em vez de usar o pmemd para executar as etapas de dinâmica, o usuário pode utilizar o sander.MPI. Execute:
+
+```bash
+mpirun -np 4 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
+```
+
+Onde `-np 4` representa o número de núcleos (cores) que serão utilizados no cálculo.
+
 #### Produção em replicatas
 
 Adicione a flag `ig` no arquivo `step5_production.mdin` para garantir trajetórias diferentes.
