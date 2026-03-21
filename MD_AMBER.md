@@ -543,6 +543,17 @@ Também o usuário poderá executar o script <a href=https://github.com/lucaspal
 python plot_md_replicates.py
 ```
 
+**Clustering combinado de réplicas de MD (cpptraj)**
+
+Poderá também ser realizado o agrupamento estrutural das 3 réplicas da dinâmica molecular usando o cpptraj. Ele concatena as trajetórias e identifica as conformações mais representativas do complexo proteína-ligante. O agrupamento pode ser baseado em átomos do sítio ativo ou em resíduos de contato proteína-ligante. A principal saída é a estrutura representativa (PDB) do cluster global mais populoso. Útil para selecionar conformações dominantes para análise estrutural.
+
+O usuário poderá executar o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/cluster_combined_replicates.sh>cluster_combined_replicates.sh</a> executando:
+
+```bash
+chmod +x cluster_combined_replicates.sh
+./cluster_combined_replicates.sh contacts   # or active_site
+```
+
 ---
 
 ### 7. MM-PBSA e MM-GBSA
@@ -551,7 +562,6 @@ python plot_md_replicates.py
 Visão Geral do Método
 
 A técnica MM/PBSA (ou MM/GBSA) permite estimar a energia livre de ligação de um complexo receptor-ligante a partir de snapshots de uma simulação de dinâmica molecular. Usaremos o script MMPBSA.py do AmberTools para calcular a energia livre de binding (ΔG_bind) e também decompor as contribuições energéticas por resíduo. Esse procedimento requer três topologias separadas (complexo, receptor e ligante) derivadas da topologia do sistema completo, além de um arquivo de trajetória e um arquivo de controle de parâmetros para o cálculo.
-
 
 ##### Preparação das Topologias “Secas” (sem solvente)
 
