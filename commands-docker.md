@@ -1,6 +1,8 @@
 # 🐳 Guia de comandos Docker
 
-Guia rápido com comandos essenciais do Docker para uso geral, incluindo gerenciamento de containers, imagens, volumes e uma seção dedicada ao MongoDB.
+Guia rápido com comandos essenciais do Docker para uso geral, incluindo gerenciamento de containers, imagens, volumes e uma seção dedicada ao MongoDB. 
+
+Ao final do guia há uma tabela com a diferença entre Docker e máquinas virtuais.
 
 ---
 
@@ -45,6 +47,69 @@ Sem cache:
 docker build --no-cache -t <image_name> .
 ```
 Força a reconstrução completa da imagem, ignorando camadas em cache.
+
+### Exemplo de arquivo Dockerfile
+
+Extrutura do projeto:
+
+```
+blast_project/
+├── Dockerfile
+├── requirements.txt
+├── analyze_blast.py
+├── query.fasta
+└── pdb_sequences.fasta
+```
+
+Dockerfile:
+
+```
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+
+# Instala BLAST+, Python e pip
+RUN apt-get update && apt-get install -y \
+    ncbi-blast+ \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia os arquivos do projeto
+COPY requirements.txt .
+COPY analyze_blast.py .
+COPY query.fasta .
+COPY pdb_sequences.fasta .
+
+# Instala dependências Python
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Cria o banco BLAST a partir do FASTA do PDB
+RUN makeblastdb -in pdb_sequences.fasta -dbtype prot -out pdb_db
+
+# Comando padrão:
+# 1) roda blastp
+# 2) salva saída tabular
+# 3) executa a análise em Python
+CMD blastp \
+    -query query.fasta \
+    -db pdb_db \
+    -out blast_results.tsv \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore" \
+    && python3 analyze_blast.py
+```
+
+Como construir a imagem:
+
+```
+cd blast_project/
+```
+
+```bash
+docker build -t blast-example .
+```
 
 ---
 
@@ -98,6 +163,19 @@ docker stop <container_name>
 ```
 Encerra a execução de um container de forma segura.
 
+
+Utilizando o exemplo de Dockerfile, para executar o container, use:
+
+```bash
+docker run -it --name blast_container blast-example
+```
+
+Para acessar o container em execução:
+
+```bash
+docker exec -it blast_container bash
+```
+
 ### Remover container
 
 ```bash
@@ -111,6 +189,16 @@ Forçar remoção:
 docker rm -f <container_name>
 ```
 Para e remove um container ativo.
+
+---
+
+### Como executar um container:
+
+Utilizando o exemplo anterior de criar uma imagem a partir de um arquivo Dockerfile, utiliza-se então esse comando para executar um container utilizando a imagem criada.
+
+```bash
+docker run -it --name blast_container blast-example
+```
 
 ---
 
@@ -347,3 +435,16 @@ Restaura o banco de dados a partir do backup.
 docker exec -it <container_name> mongosh
 ```
 Abre o shell interativo do MongoDB dentro do container.
+
+
+## Docker vs Máquina Virtual
+
+| Aspecto             | Docker (Containers)                         | Máquina Virtual (VirtualBox, VMware)       |
+| ------------------- | ---------------------------------------------- | ---------------------------------------------- |
+| O que é             | Ambiente isolado leve para executar aplicações | Sistema operacional completo virtualizado      |
+| Sistema operacional | Compartilha o kernel do host                   | Cada VM possui seu próprio sistema operacional |
+| Peso                | Leve (MB a poucos GB)                          | Pesado (vários GB)                             |
+| Performance         | Próxima do nativo                              | Overhead maior                                 |
+| Isolamento          | Isolamento de processos                        | Isolamento completo de hardware                |
+| Uso típico          | Deploy de apps, APIs, pipelines                | Testar sistemas operacionais completos         |
+| Consumo de RAM      | Baixo                                          | Alto                                           |
