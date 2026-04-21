@@ -38,9 +38,9 @@ cpptraj -i extract_cluster_rep.in
 
 ---
 
-# 2. Measure mechanism distances (corrected system)
+# 2. Measure mechanism distances
 
-File: mechanism_distances_corrected.in
+File: mechanism_distances.in
 
 ```cpptraj
 parm step3_input.parm7
@@ -62,7 +62,7 @@ distance d_Asp168_CG_C2_0CU  :168@CG  :0CU@C2 out d_Asp168_CG_C2_0CU.dat
 
 run
 
-writedata mechanism_distances_corrected.agr   d_Asp38_OD2_C2_0CU   d_Asp38_CG_C2_0CU   d_Asp38_OD1_C2_0CU   d_C2_0CU_O1_1GA   d_GLH245_HE2_O1_1GA   d_GLH245_OE2_HE2   d_GLH245_OE2_O1_1GA   d_Asp168_OD2_C2_0CU   d_Asp168_OD2_O1_1GA   d_Asp168_CG_C2_0CU
+writedata mechanism_distances.agr   d_Asp38_OD2_C2_0CU   d_Asp38_CG_C2_0CU   d_Asp38_OD1_C2_0CU   d_C2_0CU_O1_1GA   d_GLH245_HE2_O1_1GA   d_GLH245_OE2_HE2   d_GLH245_OE2_O1_1GA   d_Asp168_OD2_C2_0CU   d_Asp168_OD2_O1_1GA   d_Asp168_CG_C2_0CU
 
 quit
 ```
@@ -70,14 +70,14 @@ quit
 Run:
 
 ```bash
-cpptraj -i mechanism_distances_corrected.in
+cpptraj -i mechanism_distances.in
 ```
 
 ---
 
 # 3. Measure distances only in representative frame
 
-File: rep_frame_measure_corrected.in
+File: rep_frame_measure.in
 
 ```cpptraj
 parm step3_input.parm7
@@ -92,7 +92,7 @@ distance d_GLH245_OE2_HE2 :245@OE2 :245@HE2 out rep_d_GLH245_OE2_HE2.dat
 
 distance d_Asp168_OD2_C2_0CU :168@OD2 :0CU@C2 out rep_d_Asp168_OD2_C2_0CU.dat
 
-trajout cluster2_rep_frame10_measured_corrected.pdb pdb
+trajout cluster2_rep_frame10_measured.pdb pdb
 
 run
 quit
@@ -101,14 +101,14 @@ quit
 Run:
 
 ```bash
-cpptraj -i rep_frame_measure_corrected.in
+cpptraj -i rep_frame_measure.in
 ```
 
 ---
 
 # 4. Python plotting script
 
-File: plot_mechanism_distances_corrected.py
+File: plot_mechanism_distances.py
 
 ```python
 from pathlib import Path
@@ -117,7 +117,7 @@ import matplotlib.pyplot as plt
 
 DATA_DIR = Path(".")
 REP_FRAME = 10
-OUTPUT_FIG = "mechanism_distances_corrected.png"
+OUTPUT_FIG = "mechanism_distances.png"
 
 FILES_AND_LABELS = {
     "d_Asp38_OD2_C2_0CU.dat": "Asp38 OD2 - 0CU C2",
@@ -160,7 +160,7 @@ plt.show()
 Run:
 
 ```bash
-python plot_mechanism_distances_corrected.py
+python plot_mechanism_distances.py
 ```
 
 ---
@@ -168,8 +168,8 @@ python plot_mechanism_distances_corrected.py
 # 5. Expected outputs
 
 cluster2_rep_frame10.pdb
-mechanism_distances_corrected.agr
-mechanism_distances_corrected.png
+mechanism_distances.agr
+mechanism_distances.png
 
 ---
 
@@ -197,7 +197,7 @@ Asp168 interacts with C2 or O1
 
 ```bash
 cpptraj -i extract_cluster_rep.in
-cpptraj -i mechanism_distances_corrected.in
-cpptraj -i rep_frame_measure_corrected.in
-python plot_mechanism_distances_corrected.py
+cpptraj -i mechanism_distancesd.in
+cpptraj -i rep_frame_measure.in
+python plot_mechanism_distances.py
 ```
