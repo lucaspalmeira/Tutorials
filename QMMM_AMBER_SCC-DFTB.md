@@ -1,5 +1,25 @@
 # QM/MM Reaction Analysis – CPPTRAJ + Python Workflow
 
+## Introduction
+
+<p align="justify">
+DFTB3 is an extension of SCC-DFTB, also known as DFTB2, based on the expansion of the total DFT energy up to third order. This improvement allows a more accurate description of charge variations, electrostatic interactions, and hydrogen bonds in biomolecular systems. Unlike SCC-DFTB, in which the Hubbard parameter is fixed for each element, DFTB3 allows chemical hardness to depend on the atomic charge state, making the method more robust for reactions involving electronic redistribution.
+</p>
+
+<p align="justify">
+In this tutorial, the system considered is an invertase complexed with sucrose, previously prepared using CHARMM-GUI at pH 4.0. The simulation is performed in AMBER using the FF19SB force field for the classical region, at a temperature of 323.15 K. This preparation provides a biologically consistent starting structure, with protonation states adjusted to the acidic environment and simulation conditions compatible with the catalytic activity of the enzyme.
+</p>
+
+<p align="justify">
+The reaction of interest is sucrose hydrolysis, characterized by the cleavage of the beta-glycosidic beta(2->1) bond between the glucose and fructose units. Since this process involves bond breaking and bond formation, a purely classical description is not sufficient. Therefore, the use of DFTB3 within a QM/MM approach is suitable for treating the reactive region, while the remaining protein, solvent, and ions can be described by molecular mechanics.
+</p>
+
+<p align="justify">
+Despite its advantages, DFTB3 still has limitations, especially in systems containing sp3 nitrogen atoms, where proton affinities may be underestimated. Even so, for biomolecular systems involving charge transfer, hydrogen bonding, and enzymatic reactions, the method provides a good balance between computational cost and quantum mechanical description. Thus, it is particularly useful for investigating catalytic mechanisms in enzymes such as invertases, allowing the structural and electronic dynamics associated with sucrose hydrolysis to be monitored.
+</p>
+
+---
+
 This document describes the full workflow used to analyze the reaction mechanism involving:
 
 - nucleophilic attack of Asp38 on fructose C2
