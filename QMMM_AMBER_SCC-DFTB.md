@@ -7,7 +7,7 @@ DFTB3 is an extension of SCC-DFTB, also known as DFTB2, based on the expansion o
 </p>
 
 <p align="justify">
-In this tutorial, the system considered is an invertase complexed with sucrose, previously prepared using CHARMM-GUI at pH 4.0. The simulation is performed in AMBER using the FF19SB force field for the classical region, at a temperature of 323.15 K. This preparation provides a biologically consistent starting structure, with protonation states adjusted to the acidic environment and simulation conditions compatible with the catalytic activity of the enzyme.
+In this tutorial, the system considered is an invertase complexed with sucrose, previously prepared using CHARMM-GUI at pH 4.0. The simulation is performed in AMBER using the FF19SB force field for the classical region, at a temperature of 323.15 K, with a total simulation time of 1 ns. This preparation provides a biologically consistent starting structure, with protonation states adjusted to the acidic environment and simulation conditions compatible with the catalytic activity of the enzyme.
 </p>
 
 <p align="justify">
