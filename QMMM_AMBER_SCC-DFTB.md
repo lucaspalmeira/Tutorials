@@ -1,4 +1,4 @@
-# QM/MM Reaction Analysis – CPPTRAJ + Python Workflow
+# DFTB3-Based QM/MM MD in AMBER: A Tutorial on Sucrose Hydrolysis by Invertase
 
 ## Introduction
 
