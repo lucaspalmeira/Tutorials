@@ -35,7 +35,20 @@ Asp38@OD2 → 0CU@C2
 
 ---
 
-# 1. Extract representative cluster frame
+# 1. Run Production
+
+```bash
+mpirun -np 20 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
+```
+
+Restart production
+```bash
+mpirun -np 20 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step5_production.rst7 -o step5_production_2.mdout -r step5_production_2.rst7 -inf step5_production_2.mdinfo -x step5_production_2.nc
+```
+
+---
+
+# 2. Extract representative cluster frame
 
 File: extract_cluster_rep.in
 
@@ -58,7 +71,7 @@ cpptraj -i extract_cluster_rep.in
 
 ---
 
-# 2. Measure mechanism distances
+# 3. Measure mechanism distances
 
 File: mechanism_distances.in
 
@@ -95,7 +108,7 @@ cpptraj -i mechanism_distances.in
 
 ---
 
-# 3. Measure distances only in representative frame
+# 4. Measure distances only in representative frame
 
 File: rep_frame_measure.in
 
@@ -126,7 +139,7 @@ cpptraj -i rep_frame_measure.in
 
 ---
 
-# 4. Python plotting script
+# 5. Python plotting script
 
 File: plot_mechanism_distances.py
 
@@ -185,7 +198,7 @@ python plot_mechanism_distances.py
 
 ---
 
-# 5. Expected outputs
+# 6. Expected outputs
 
 cluster2_rep_frame10.pdb
 mechanism_distances.agr
@@ -193,7 +206,7 @@ mechanism_distances.png
 
 ---
 
-# 6. Interpretation guidelines
+# 7. Interpretation guidelines
 
 Covalent intermediate formation:
 
@@ -213,7 +226,7 @@ Asp168 interacts with C2 or O1
 
 ---
 
-# 7. Full workflow
+# 8. Full workflow
 
 ```bash
 cpptraj -i extract_cluster_rep.in
