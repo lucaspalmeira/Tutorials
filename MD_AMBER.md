@@ -556,8 +556,7 @@ Poderá também ser realizado o agrupamento estrutural das 3 réplicas da dinâm
 O usuário poderá executar o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/cluster_3_replicates.sh>cluster_3_replicates.sh</a> executando:
 
 ```bash
-chmod +x cluster_combined_replicates.sh
-./cluster_combined_replicates.sh contacts   # or active_site
+bash cluster_3_replicates.sh
 ```
 
 ---
