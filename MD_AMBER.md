@@ -551,9 +551,9 @@ python plot_md_replicates.py
 
 **Clustering combinado de réplicas de MD (cpptraj)**
 
-Poderá também ser realizado o agrupamento estrutural das 3 réplicas da dinâmica molecular usando o cpptraj. Ele concatena as trajetórias e identifica as conformações mais representativas do complexo proteína-ligante. O agrupamento pode ser baseado em átomos do sítio ativo ou em resíduos de contato proteína-ligante. A principal saída é a estrutura representativa (PDB) do cluster global mais populoso. Útil para selecionar conformações dominantes para análise estrutural.
+Poderá também ser realizado o agrupamento estrutural das 3 réplicas da dinâmica molecular usando o cpptraj. Ele concatena as trajetórias e identifica as conformações mais representativas do complexo proteína-ligante. A principal saída é a estrutura representativa (PDB) do cluster global mais populoso. Útil para selecionar conformações dominantes para análise estrutural.
 
-O usuário poderá executar o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/cluster_combined_replicates.sh>cluster_combined_replicates.sh</a> executando:
+O usuário poderá executar o script <a href=https://github.com/lucaspalmeira/Tutorials/blob/main/cluster_3_replicates.sh>cluster_3_replicates.sh</a> executando:
 
 ```bash
 chmod +x cluster_combined_replicates.sh
