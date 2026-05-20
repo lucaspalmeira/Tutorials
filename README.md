@@ -1,70 +1,117 @@
-# Tutorials
+# Bioinformatics Tutorials
 
-Este repositório reúne tutoriais e scripts práticos para bioinformática estrutural, docking molecular, dinâmica molecular, QM/MM e rotinas auxiliares de uso em Linux/HPC.
+This repository collects practical tutorials and scripts for structural bioinformatics, molecular docking, molecular dynamics, QM/MM workflows, Linux/HPC routines, and supporting command-line work.
 
-## Conteúdo do repositório
+The documentation is written in English and is prepared for publication with GitHub Pages through MkDocs using a Read the Docs style layout.
 
-### `Enzeptional_(GT4SD).md`
-Tutorial para predição e otimização de enzimas com o framework **Enzeptional (GT4SD)**, com foco em viabilidade catalítica (*feasibility*) e `kcat` para reações específicas.
+## Documentation Website
 
-### `Hydrated_docking.md`
-Guia de **docking molecular com águas explícitas**, usando **AutoDock Vina**, **Meeko** e **AutoGrid4**, com foco em *hydrated docking* no sítio de ligação.
+The website source lives in `docs/` and the navigation is configured in `mkdocs.yml`.
 
-### `MD_AMBER.md`
-Tutorial completo de **dinâmica molecular clássica com AMBER** para sistemas proteína-ligante, incluindo preparação, minimização, equilibração, produção e análises com foco em carbohidratos.
+To preview the site locally:
 
-### `MD_GROMACS.md`
-Tutorial de **dinâmica molecular com GROMACS**, cobrindo minimização, equilibração, produção, pré-processamento de trajetória, análises estruturais e cálculo de energia livre com **gmx_MMPBSA**.
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-docs.txt
+mkdocs serve
+```
 
-### `MD_SLURM.md`
-Guia prático para submissão e monitoramento de **jobs no SLURM**, com foco em fluxos de trabalho com **GROMACS**, **AMBER** e **MMPBSA** em ambiente HPC.
+Then open the local URL printed by MkDocs.
 
-### `QMMM_AMBER_QUICK.md`
-Tutorial de **QM/MM no AMBER** usando **QUICK**, incluindo etapas de minimização, equilíbrio e produção com métodos semiempíricos e DFT.
+To build the static site:
 
-### `QMMM_GROMACS_CP2K.md`
-Protocolo para **QM/MM com GROMACS + CP2K**, incluindo definição da região quântica, criação de grupos de índice e execução em ambiente com GPU.
+```bash
+mkdocs build --strict
+```
+
+The build output is written to `site/`.
+
+## GitHub Pages
+
+The repository includes a GitHub Actions workflow at `.github/workflows/pages.yml`.
+
+After pushing this repository to GitHub:
+
+1. Open the repository settings on GitHub.
+2. Go to **Pages**.
+3. Set the source to **GitHub Actions**.
+4. Push to the `main` branch or run the workflow manually.
+
+GitHub will publish the generated documentation as a GitHub Pages site.
+
+## Tutorial Areas
+
+### Enzeptional (GT4SD)
+
+Tutorial for enzyme prediction and optimization with **Enzeptional (GT4SD)**, focused on catalytic feasibility and `kcat` for specific reactions.
+
+### Hydrated Docking
+
+Guide for **molecular docking with explicit waters** using **AutoDock Vina**, **Meeko**, and **AutoGrid4**, focused on hydrated docking in the binding site.
+
+### Molecular Dynamics with AMBER
+
+Tutorial for classical **protein-ligand molecular dynamics with AMBER**, including preparation, minimization, equilibration, production, and analysis, with attention to carbohydrate-containing systems.
+
+### Molecular Dynamics with GROMACS
+
+Tutorial for **molecular dynamics with GROMACS**, covering minimization, equilibration, production, trajectory preprocessing, structural analyses, and free-energy estimation with **gmx_MMPBSA**.
+
+### SLURM for Molecular Simulation Workflows
+
+Practical guide for submitting and monitoring **SLURM jobs**, focused on **GROMACS**, **AMBER**, and **MMPBSA** workflows in HPC environments.
+
+### QM/MM with AMBER and QUICK
+
+Tutorial for **QM/MM in AMBER with QUICK**, including minimization, equilibration, and production with semiempirical and DFT methods.
+
+### DFTB3 QM/MM with AMBER
+
+Tutorial for **DFTB3-based QM/MM molecular dynamics in AMBER**, focused on sucrose hydrolysis by invertase and mechanism-distance analysis.
+
+### QM/MM with GROMACS and CP2K
+
+Protocol for **QM/MM with GROMACS + CP2K**, including quantum-region definition, index group creation, and GPU-enabled execution.
 
 ## Scripts
 
 ### `run_md_amber_three_replicates.sh`
-Script para executar **minimização, equilibração e três replicatas de produção** no AMBER com `pmemd.cuda`.
+
+Script for running minimization, equilibration, and three production replicas in AMBER with `pmemd.cuda`.
 
 ### `run_cpptraj_replicatas.sh`
-Script para análises pós-produção com **cpptraj** em múltiplas replicatas, incluindo:
-- centralização da trajetória
-- RMSD do ligante
-- RMSF por resíduo
-- raio de giro
-- ligações de hidrogênio
-- clustering conformacional
 
-## Guias rápidos
+Script for post-production analysis with **cpptraj** across multiple replicas, including trajectory centering, ligand RMSD, residue RMSF, radius of gyration, hydrogen bonds, and conformational clustering.
 
-### `commands-docker.md`
-Resumo de **comandos úteis do Docker**, incluindo imagens, contêineres, volumes, limpeza de ambiente e backup/restauração.
+## Quick Guides
 
-### `git_commands.md`
-Lista de **comandos essenciais do Git** para configuração, versionamento, branches, commits, inspeção e recuperação de alterações.
+### Docker Commands
 
-## Objetivo
+Quick reference for useful **Docker commands**, including images, containers, volumes, environment cleanup, backup, and restoration.
 
-O objetivo deste repositório é servir como uma coleção prática de protocolos e comandos para apoiar estudos em:
+### Git Commands
 
-- docking molecular
-- dinâmica molecular
-- QM/MM
-- uso de containers
-- execução em ambientes HPC
-- automação de análises
+Quick reference for essential **Git commands**, including configuration, versioning, branches, commits, inspection, and change recovery.
 
-## Observação
+## Goal
 
-Os tutoriais foram escritos com foco prático e podem exigir adaptação conforme:
-- o sistema estudado
-- os arquivos gerados pelo CHARMM-GUI
-- o cluster/HPC utilizado
-- as versões dos programas instalados
+The goal of this repository is to serve as a practical collection of protocols and commands for:
 
----
-**Autor:** Lucas Palmeira
+- molecular docking
+- molecular dynamics
+- QM/MM calculations
+- container usage
+- HPC execution
+- analysis automation
+
+## Notes
+
+The tutorials are intentionally practical and may need adaptation depending on:
+
+- the system under study
+- files generated by CHARMM-GUI or related preparation tools
+- the target cluster or HPC environment
+- installed software versions
+
+**Author:** Lucas Palmeira

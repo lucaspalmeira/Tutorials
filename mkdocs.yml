@@ -1,0 +1,46 @@
+site_name: Bioinformatics Tutorials
+site_description: Practical tutorials for structural bioinformatics, docking, molecular dynamics, QM/MM, Linux, and HPC workflows.
+site_author: Lucas Palmeira
+docs_dir: docs
+site_dir: site
+use_directory_urls: true
+
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - bash
+    - python
+    - yaml
+    - markdown
+  include_homepage_in_sidebar: true
+  navigation_depth: 4
+  prev_next_buttons_location: bottom
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - Overview: tutorials/index.md
+      - Enzeptional (GT4SD): tutorials/enzeptional-gt4sd.md
+      - Hydrated Docking: tutorials/hydrated-docking.md
+      - Molecular Dynamics with AMBER: tutorials/md-amber.md
+      - Molecular Dynamics with GROMACS: tutorials/md-gromacs.md
+      - SLURM for Molecular Simulation Workflows: tutorials/md-slurm.md
+      - DFTB3 QM/MM with AMBER: tutorials/qmmm-amber-dftb3.md
+      - QM/MM with AMBER and QUICK: tutorials/qmmm-amber-quick.md
+      - QM/MM with GROMACS and CP2K: tutorials/qmmm-gromacs-cp2k.md
+      - Docker Commands: tutorials/commands-docker.md
+      - Git Commands: tutorials/git-commands.md
+      - Simulation Scripts: tutorials/scripts.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - fenced_code
+  - tables
+  - toc:
+      permalink: true

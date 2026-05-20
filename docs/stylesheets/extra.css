@@ -1,0 +1,82 @@
+:root {
+  --tutorial-green: #2f6f4e;
+  --tutorial-green-dark: #24543c;
+  --tutorial-blue: #1f6f8b;
+  --tutorial-border: #d9e2dc;
+  --tutorial-code-bg: #f4f7f5;
+}
+
+.wy-nav-side {
+  background: #27343d;
+}
+
+.wy-side-nav-search {
+  background-color: var(--tutorial-green);
+}
+
+.wy-side-nav-search input[type="text"] {
+  border-color: var(--tutorial-green-dark);
+  border-radius: 4px;
+}
+
+.wy-menu-vertical header,
+.wy-menu-vertical p.caption {
+  color: #b8d8c5;
+}
+
+.wy-menu-vertical a {
+  color: #d8e2dc;
+}
+
+.wy-menu-vertical a:hover {
+  background-color: #354652;
+}
+
+.wy-nav-top {
+  background: var(--tutorial-green);
+}
+
+.wy-nav-content {
+  max-width: 1080px;
+}
+
+.rst-content a,
+.rst-content a:visited {
+  color: var(--tutorial-blue);
+}
+
+.rst-content h1,
+.rst-content h2,
+.rst-content h3 {
+  color: #1f2f38;
+  font-weight: 700;
+}
+
+.rst-content h1 {
+  border-bottom: 2px solid var(--tutorial-border);
+  padding-bottom: 0.3rem;
+}
+
+.rst-content code.literal,
+.rst-content tt.literal {
+  background: var(--tutorial-code-bg);
+  border: 1px solid var(--tutorial-border);
+  color: #244236;
+}
+
+.rst-content table.docutils {
+  border: 1px solid var(--tutorial-border);
+}
+
+.rst-content table.docutils thead {
+  background: #eef5f1;
+}
+
+.rst-content table.docutils td,
+.rst-content table.docutils th {
+  border-color: var(--tutorial-border);
+}
+
+.rst-content .admonition {
+  border-radius: 4px;
+}
