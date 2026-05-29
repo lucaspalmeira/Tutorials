@@ -676,5 +676,99 @@ No arquivo FINAL_DECOMP_MMPBSA.dat (gerado porque usamos -do e ativamos &decomp)
 Por fim, você terá realizado com sucesso o cálculo de energia livre de binding tanto via MM-GBSA quanto MM-PBSA, em modo serial ou paralelo, e obtido a decomposição por resíduo para uma análise detalhada. Com esses resultados, é possível inferir a estabilidade relativa do complexo proteína-ligante e os hot-spots de interação ao nível de resíduo.
 
 ---
+```mermaid
+flowchart TD
+
+A[Coleta de sequências GH32 no UniProt<br/>Exo-inulinases, endo-inulinases e invertases] --> B[Classificação enzimática<br/>Predição dos números EC com CLEAN]
+
+B --> C[Obtenção das estruturas 3D]
+C --> C1[Estruturas cristalográficas / AlphaFoldDB]
+C --> C2[Modelagem com AlphaFold3<br/>quando não havia estrutura disponível]
+
+C1 --> D[Alinhamento estrutural com TM-align]
+C2 --> D
+
+D --> E[Mapeamento dos sítios ativos<br/>com base em estruturas de referência]
+E --> F[Integração dos sítios ativos às sequências<br/>Geração de FASTA anotado]
+
+F --> G[Preparação de substratos e produtos]
+G --> G1[Busca no BRENDA]
+G1 --> G2[Download em MOL]
+G2 --> G3[Conversão para SMILES]
+G3 --> G4[Verificação da estereoquímica]
+
+F --> H[Otimização enzimática por SAGA / Enzeptional-GT4SD]
+G4 --> H
+
+H --> I[Geração de mutações com ESM2<br/>em regiões mapeadas pelo TM-align]
+I --> J[Avaliação das variantes]
+J --> J1[Score de viabilidade catalítica<br/>Random Forest]
+J --> J2[Score de kcat<br/>XGBoost]
+
+J1 --> K[Seleção das melhores sequências otimizadas]
+J2 --> K
+
+K --> L[Predição de parâmetros cinéticos]
+L --> L1[Kcat]
+L --> L2[Km]
+L1 --> M[Benchmark dos modelos preditivos<br/>UniKP, CatPred e DLKcat]
+L2 --> M
+
+M --> N[Modelagem molecular das sequências otimizadas<br/>SwissModel]
+N --> O[Avaliação estrutural<br/>QMEANDisCo, QMEAN, GMQE e Ramachandran]
+
+O --> P[Validação do docking por re-acoplamento]
+P --> Q[Preparação de receptores e ligantes<br/>PyMOL e MGLTools]
+Q --> R[Docking molecular com Vina-Carb]
+R --> S[Avaliação das poses<br/>RMSD no Chimera]
+
+S --> T[Docking das enzimas otimizadas]
+T --> U[Seleção das melhores poses<br/>com base em estruturas de referência]
+U --> V[Construção dos complexos enzima-substrato]
+V --> W[Mapas de interação<br/>LigPlot+]
+
+W --> X[Preparação dos sistemas para DM<br/>CHARMM-GUI]
+X --> Y[Simulações de dinâmica molecular<br/>AMBER, ff19SB, TIP3P]
+Y --> Y1[Minimização de energia<br/>50.000 passos]
+Y1 --> Y2[Equilibração<br/>125.000 passos]
+Y2 --> Y3[Produção<br/>3 réplicas de 100 ns]
+
+Y3 --> Z[Análises globais das trajetórias<br/>cpptraj]
+Z --> Z1[Correção PBC, centralização e alinhamento por Cα]
+Z1 --> Z2[RMSD da proteína e do ligante]
+Z1 --> Z3[RMSF por resíduo]
+Z1 --> Z4[Raio de giro]
+Z1 --> Z5[Ligações de H proteína-ligante<br/>ocupação, série temporal e tempo de vida]
+Z1 --> Z6[Clustering conformacional do ligante]
+
+Z --> AA[Análise do efeito das mutações]
+AA --> AB[Comparação WT vs otimizada]
+AB --> AC[Análise local das mutações<br/>janelas de ±10 resíduos]
+AC --> AC1[RMSD/RMSF local]
+AC --> AC2[SASA]
+AC --> AC3[Estrutura secundária]
+AC --> AC4[Contatos com substrato]
+AC --> AC5[Distâncias mínimas<br/>mutação-substrato-catalíticos]
+AC --> AC6[Ligações de H direcionais]
+
+AB --> AD[Análise do sítio ativo e substrato]
+AD --> AD1[RMSD do ligante]
+AD --> AD2[RMSD/RMSF dos resíduos catalíticos]
+AD --> AD3[Distâncias catalíticos-substrato]
+AD --> AD4[Contatos ligante-proteína e ligante-catalíticos]
+
+AB --> AE[Análises dinâmicas e alostéricas]
+AE --> AE1[DCCM]
+AE --> AE2[Correlação atômica]
+AE --> AE3[PCA]
+AE --> AE4[Clustering da região ativa]
+
+AC6 --> AF[Interpretação dos resultados]
+AD4 --> AF
+AE4 --> AF
+
+AF --> AG[Conclusões com base na consistência<br/>entre as três réplicas]
+```
+---
 
 > As instruções acima foram extraídas e interpretadas do manual do Amber 2025 (https://ambermd.org/doc12/Amber25.pdf)
