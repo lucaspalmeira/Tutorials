@@ -35,20 +35,53 @@ Asp38@OD2 → 0CU@C2
 
 ---
 
-# 1. Run Production
+### 1. Run Minimization
 
 ```bash
-mpirun -np 20 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
+sed -e "s/FC/1.0/g" dihe.restraint > step4.1_equilibration.rest
+```
+
+```bash
+mpirun -np 30 sander.MPI -O -i step4.0_minimization.mdin -p step3_input.parm7 -c step3_input.rst7 -o step4.0_minimization.mdout -r step4.0_minimization.rst7 -inf step4.0_minimization.mdinfo -ref step3_input.rst7
+```
+
+### 2. Run Equilibration
+
+```bash
+sed -e "s/FC/1.0/g" dihe.restraint > step4.0_minimization.rest
+```
+
+```bash
+mpirun -np 30 sander.MPI -O -i step4.1_equilibration.mdin -p step3_input.parm7 -c step4.0_minimization.rst7 -o step4.1_equilibration.mdout -r step4.1_equilibration.rst7 -inf step4.1_equilibration.mdinfo -ref step3_input.rst7 -x step4.1_equilibration.nc
+```
+
+### 3. Run Production
+
+```bash
+mpirun -np 30 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step4.1_equilibration.rst7 -o step5_production.mdout -r step5_production.rst7 -inf step5_production.mdinfo -x step5_production.nc
 ```
 
 Restart production
 ```bash
-mpirun -np 20 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step5_production.rst7 -o step5_production_2.mdout -r step5_production_2.rst7 -inf step5_production_2.mdinfo -x step5_production_2.nc
+mpirun -np 30 sander.MPI -O -i step5_production.mdin -p step3_input.parm7 -c step5_production.rst7 -o step5_production_2.mdout -r step5_production_2.rst7 -inf step5_production_2.mdinfo -x step5_production_2.nc
 ```
 
 ---
 
-# 2. Extract representative cluster frame
+### 4. Center trajctory
+
+```bash
+cpptraj -p step3_input.parm7 -y step5_production.nc << EOF
+autoimage anchor :1-XXX
+center :1-XXX mass origin
+image origin center
+rms first :1-XXX@CA
+trajout step5_centered.nc
+
+EOF
+```
+
+### 5. Extract representative cluster frame
 
 File: extract_cluster_rep.in
 
@@ -71,7 +104,7 @@ cpptraj -i extract_cluster_rep.in
 
 ---
 
-# 3. Measure mechanism distances
+### 6. Measure mechanism distances
 
 File: mechanism_distances.in
 
@@ -108,13 +141,13 @@ cpptraj -i mechanism_distances.in
 
 ---
 
-# 4. Measure distances only in representative frame
+### 7. Measure distances only in representative frame
 
 File: rep_frame_measure.in
 
 ```cpptraj
 parm step3_input.parm7
-trajin step5_centered.nc 10 10
+trajin step5_centered.nc 19 19
 
 distance d_Asp38_OD2_C2_0CU :38@OD2 :0CU@C2 out rep_d_Asp38_OD2_C2_0CU.dat
 distance d_Asp38_CG_C2_0CU :38@CG :0CU@C2 out rep_d_Asp38_CG_C2_0CU.dat
@@ -139,7 +172,7 @@ cpptraj -i rep_frame_measure.in
 
 ---
 
-# 5. Python plotting script
+### 8. Python plotting script
 
 File: plot_mechanism_distances.py
 
@@ -198,7 +231,7 @@ python plot_mechanism_distances.py
 
 ---
 
-# 6. Expected outputs
+### 9. Expected outputs
 
 cluster2_rep_frame10.pdb
 mechanism_distances.agr
@@ -206,7 +239,7 @@ mechanism_distances.png
 
 ---
 
-# 7. Interpretation guidelines
+### 10. Interpretation guidelines
 
 Covalent intermediate formation:
 
@@ -226,7 +259,7 @@ Asp168 interacts with C2 or O1
 
 ---
 
-# 8. Full workflow
+### 11. Full workflow
 
 ```bash
 cpptraj -i extract_cluster_rep.in
