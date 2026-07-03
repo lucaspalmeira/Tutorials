@@ -1781,6 +1781,616 @@ NP=8 bash templates/run/run_qmmm_sanderMPI.sh
 The central point of this preparation was to correctly represent the covalent intermediate between Asp38 and fructose while avoiding the undesired modification automatically generated during graphical-interface preparation. The creation of the ASJ residue allowed the <code>ASJ38@OD2–ASJ38@C2</code> covalent bond to be explicitly maintained in the topology. The water molecule selected from frame 14 of the first-step dynamics was preserved as LIG and kept in the active site by geometric restraints during the classical stage. The final correction of the QM-region charge to <code>qmcharge=-1</code> removed the odd-electron error and allowed the QM/MM-DFTB3 simulation of the second reaction step to begin.
 </p>
 
+
+---
+
+## 29. Rescue protocol for an unstable QM/MM production
+
+<p align="justify">
+During the QM/MM-DFTB3 production of the second reaction step, the simulation initially started correctly, with the ASJ/LIG/GLU245 region included in the QM layer and with the corrected charge <code>qmcharge=-1</code>. However, after part of the trajectory had been generated, the simulation became unstable. The output showed SCC-DFTB convergence problems, <code>vlimit exceeded</code> warnings, and finally stopped with:
+</p>
+
+```text
+SANDER BOMB in subroutine QM_CHECK_PERIODIC
+QM region + cutoff larger than box
+```
+
+<p align="justify">
+This final error was interpreted as a consequence, not the primary cause. The QM region became geometrically unstable before the crash, especially around the reactive water molecule <code>LIG</code>. Therefore, the final restart from the failed production was not used. Instead, the centered trajectory generated before the crash was analyzed, a stable rescue frame was selected, and the production was restarted using a more conservative QM/MM setup.
+</p>
+
+---
+
+### 29.1 Diagnosing the failed production trajectory
+
+The centered trajectory was analyzed with `cpptraj` to monitor the covalent intermediate, the reactive water, and the proton-transfer geometry.
+
+File:
+
+```text
+diagnose_qmmm_prod.in
+```
+
+Content:
+
+```cpptraj
+parm system_ASJ_LIG.parm7
+trajin 06_prod_QMMM_DFTB3_ASJ_LIG_centered.nc
+
+distance d_ASJ_OD2_C2 :38@OD2 :38@C2 out d_ASJ_OD2_C2_prod.dat
+distance d_LIG_O_C2 :LIG@O :38@C2 out d_LIG_O_C2_prod.dat
+distance d_LIG_H1_GLU245_OE2 :LIG@H1 :245@OE2 out d_LIG_H1_GLU245_OE2_prod.dat
+distance d_LIG_O_H1 :LIG@O :LIG@H1 out d_LIG_O_H1_prod.dat
+distance d_LIG_O_H2 :LIG@O :LIG@H2 out d_LIG_O_H2_prod.dat
+angle a_OD2_C2_LIG_O :38@OD2 :38@C2 :LIG@O out a_OD2_C2_LIG_O_prod.dat
+
+run
+quit
+```
+
+Run:
+
+```bash
+cpptraj -i diagnose_qmmm_prod.in
+```
+
+The monitored variables were:
+
+```text
+ASJ38@OD2 -- ASJ38@C2
+LIG@O     -- ASJ38@C2
+LIG@H1    -- GLU245@OE2
+LIG@O     -- LIG@H1
+LIG@O     -- LIG@H2
+ASJ38@OD2 -- ASJ38@C2 -- LIG@O
+```
+
+---
+
+### 29.2 Selecting a stable rescue frame
+
+A Python script was used to identify frames with a productive geometry before the instability.
+
+File:
+
+```text
+find_best_rescue_frame.py
+```
+
+Content:
+
+```python
+from pathlib import Path
+
+def read_dat(file):
+    data = {}
+    for line in Path(file).read_text().splitlines():
+        if not line.strip() or line.startswith("#") or line.startswith("@"):
+            continue
+        f = line.split()
+        if len(f) >= 2:
+            data[int(float(f[0]))] = float(f[1])
+    return data
+
+d_od2_c2 = read_dat("d_ASJ_OD2_C2_prod.dat")
+d_lig_c2 = read_dat("d_LIG_O_C2_prod.dat")
+d_h1_oe2 = read_dat("d_LIG_H1_GLU245_OE2_prod.dat")
+d_oh1 = read_dat("d_LIG_O_H1_prod.dat")
+d_oh2 = read_dat("d_LIG_O_H2_prod.dat")
+ang = read_dat("a_OD2_C2_LIG_O_prod.dat")
+
+frames = sorted(set(d_od2_c2) & set(d_lig_c2) & set(d_h1_oe2) & set(d_oh1) & set(d_oh2) & set(ang))
+
+candidates = []
+
+for fr in frames:
+    if fr > 195:
+        continue
+
+    od2_c2 = d_od2_c2[fr]
+    lig_c2 = d_lig_c2[fr]
+    h1_oe2 = d_h1_oe2[fr]
+    oh1 = d_oh1[fr]
+    oh2 = d_oh2[fr]
+    a = ang[fr]
+
+    score = 0.0
+    score += abs(od2_c2 - 1.45) * 3.0
+    score += abs(lig_c2 - 3.2) * 4.0
+    score += abs(h1_oe2 - 2.0) * 2.0
+    score += abs(oh1 - 1.0) * 5.0
+    score += abs(oh2 - 1.0) * 5.0
+    score += abs(a - 170.0) / 20.0
+
+    ok = (
+        1.30 <= od2_c2 <= 1.80 and
+        2.5 <= lig_c2 <= 3.8 and
+        1.4 <= h1_oe2 <= 2.8 and
+        0.7 <= oh1 <= 1.3 and
+        0.7 <= oh2 <= 1.3 and
+        145.0 <= a <= 180.0
+    )
+
+    candidates.append((not ok, score, fr, od2_c2, lig_c2, h1_oe2, oh1, oh2, a))
+
+candidates.sort()
+
+print("Top frames candidatos:")
+print("frame  OD2-C2  LIG-O-C2  H1-OE2  O-H1  O-H2  angle  status")
+for bad, score, fr, od2_c2, lig_c2, h1_oe2, oh1, oh2, a in candidates[:30]:
+    status = "OK" if not bad else "fora_ideal"
+    print(f"{fr:5d}  {od2_c2:6.3f}  {lig_c2:8.3f}  {h1_oe2:6.3f}  {oh1:5.3f}  {oh2:5.3f}  {a:6.1f}  {status}")
+```
+
+Run:
+
+```bash
+python find_best_rescue_frame.py
+```
+
+Frame 95 was selected because it preserved a favorable reactive geometry:
+
+```text
+frame 95
+OD2-C2        = 1.523 Å
+LIG-O-C2      = 3.418 Å
+H1-OE2        = 1.775 Å
+O-H1          = 0.999 Å
+O-H2          = 1.006 Å
+angle         = 174.2 degrees
+status        = OK
+```
+
+---
+
+### 29.3 Extracting the rescue frame
+
+File:
+
+```text
+extract_rescue_frame.in
+```
+
+Content:
+
+```cpptraj
+parm system_ASJ_LIG.parm7
+trajin 06_prod_QMMM_DFTB3_ASJ_LIG_centered.nc 95 95
+trajout rescue_frame95.rst7 restart
+trajout rescue_frame95.pdb pdb
+run
+quit
+```
+
+Run:
+
+```bash
+cpptraj -i extract_rescue_frame.in
+```
+
+Then check the extracted frame:
+
+```bash
+python scripts/check_ASJ_internal_geometry.py rescue_frame95.pdb
+python scripts/check_reactive_geometry_flexible.py rescue_frame95.pdb
+```
+
+Expected ranges:
+
+```text
+ASJ38@OD2 -- ASJ38@C2      ~1.4–1.7 Å
+LIG@O     -- ASJ38@C2      ~2.8–3.6 Å
+LIG@H1    -- GLU245@OE2    ~1.5–2.6 Å
+OD2-C2-O(LIG)              ~150–180 degrees
+```
+
+---
+
+## 30. QM/MM rescue minimization
+
+<p align="justify">
+The extracted rescue frame was first minimized using QM/MM-DFTB3. This was necessary because a frame extracted from a NetCDF trajectory should not be used directly as a velocity-containing restart for production. The minimization relaxes the geometry and avoids continuing with unstable velocities.
+</p>
+
+File:
+
+```text
+templates/mdin/06b_min_QMMM_DFTB3_rescue.in
+```
+
+Content:
+
+```text
+QM/MM rescue minimization from stable production frame
+&cntrl
+  imin=1,
+  maxcyc=8000,
+  ncyc=4000,
+  ntmin=1,
+  cut=10.0,
+  ntb=1,
+  ntpr=50,
+  ifqnt=1,
+  nmropt=1,
+/
+&qmmm
+  qmmask='(:38@CB,HB2,HB3,CG,OD1,OD2,C1,O1,C2,C3,O3,C4,O4,C5,O5,C6,O6,H3,H4,H5,H11,H12,H1O,H3O,H61,H62,H4O,H6O | :245@CB,HB2,HB3,CG,HG2,HG3,CD,OE1,OE2 | :LIG)',
+  qmcharge=-1,
+  qm_theory='DFTB3',
+  qmcut=10.0,
+  qm_ewald=1,
+  qmshake=0,
+  scfconv=1.0d-6,
+  itrmax=2000,
+/
+&wt
+  type='END',
+/
+DISANG=DISANG_LIG_reactive.RST
+LISTOUT=POUT_QMMM_RESCUE_MIN
+```
+
+Run:
+
+```bash
+FRAME=95
+
+mpirun -np 8 sander.MPI -O \
+  -i templates/mdin/06b_min_QMMM_DFTB3_rescue.in \
+  -p system_ASJ_LIG.parm7 \
+  -c rescue_frame${FRAME}.rst7 \
+  -o 06b_min_QMMM_DFTB3_rescue_frame${FRAME}.out \
+  -r 06b_min_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -inf 06b_min_QMMM_DFTB3_rescue_frame${FRAME}.mdinfo
+```
+
+Check:
+
+```bash
+grep -c "odd number of electrons" 06b_min_QMMM_DFTB3_rescue_frame95.out
+grep -c "Convergence could not be achieved" 06b_min_QMMM_DFTB3_rescue_frame95.out
+grep "NSTEP" -A8 06b_min_QMMM_DFTB3_rescue_frame95.out | tail -30
+```
+
+Expected result:
+
+```text
+odd number of electrons = 0
+Convergence failures    = 0
+RMS decreasing during minimization
+```
+
+---
+
+## 31. Short QM/MM rescue test
+
+<p align="justify">
+A short 1000-step QM/MM test was then performed with a smaller timestep. This step tested whether the rescued system remained stable before starting a longer production.
+</p>
+
+File:
+
+```text
+templates/mdin/06c_test_QMMM_DFTB3_rescue_1000steps.in
+```
+
+Content:
+
+```text
+Short rescue QM/MM-DFTB3 test with LIG restraints
+&cntrl
+  imin=0, irest=0, ntx=1,
+  nstlim=1000, dt=0.00025,
+  ntc=1, ntf=1,
+  cut=10.0,
+  ntb=2, ntp=1, taup=2.0,
+  ntt=3, gamma_ln=5.0,
+  tempi=323.15, temp0=323.15,
+  ntpr=10, ntwx=10, ntwr=500,
+  ioutfm=1,
+  ifqnt=1,
+  nmropt=1,
+/
+&qmmm
+  qmmask='(:38@CB,HB2,HB3,CG,OD1,OD2,C1,O1,C2,C3,O3,C4,O4,C5,O5,C6,O6,H3,H4,H5,H11,H12,H1O,H3O,H61,H62,H4O,H6O | :245@CB,HB2,HB3,CG,HG2,HG3,CD,OE1,OE2 | :LIG)',
+  qmcharge=-1,
+  qm_theory='DFTB3',
+  qmcut=10.0,
+  writepdb=1,
+  qm_ewald=1,
+  qmshake=0,
+  scfconv=1.0d-6,
+  itrmax=2000,
+/
+&wt
+  type='END',
+/
+DISANG=DISANG_LIG_reactive.RST
+LISTOUT=POUT_QMMM_RESCUE_TEST
+```
+
+Run:
+
+```bash
+FRAME=95
+
+mpirun -np 8 sander.MPI -O \
+  -i templates/mdin/06c_test_QMMM_DFTB3_rescue_1000steps.in \
+  -p system_ASJ_LIG.parm7 \
+  -c 06b_min_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -o 06c_test_QMMM_DFTB3_rescue_frame${FRAME}.out \
+  -r 06c_test_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -x 06c_test_QMMM_DFTB3_rescue_frame${FRAME}.nc \
+  -inf 06c_test_QMMM_DFTB3_rescue_frame${FRAME}.mdinfo
+```
+
+Check:
+
+```bash
+grep -c "odd number of electrons" 06c_test_QMMM_DFTB3_rescue_frame95.out
+grep -c "Convergence could not be achieved" 06c_test_QMMM_DFTB3_rescue_frame95.out
+grep -c "vlimit exceeded" 06c_test_QMMM_DFTB3_rescue_frame95.out
+grep "NSTEP" -A8 06c_test_QMMM_DFTB3_rescue_frame95.out | tail -30
+```
+
+Expected result:
+
+```text
+odd number of electrons = 0
+Convergence failures    = 0
+vlimit exceeded         = 0
+```
+
+---
+
+## 32. QM/MM rescue warmup
+
+<p align="justify">
+Because the 1000-step test represents only 0.25 ps when <code>dt=0.00025</code> ps, a short warmup was added before the long production. This allows the temperature to stabilize around 323.15 K while keeping the conservative timestep.
+</p>
+
+File:
+
+```text
+templates/mdin/06d_warmup_QMMM_DFTB3_rescue_5000steps.in
+```
+
+Content:
+
+```text
+Rescue QM/MM-DFTB3 warmup with LIG restraints
+&cntrl
+  imin=0, irest=1, ntx=5,
+  nstlim=5000, dt=0.00025,
+  ntc=1, ntf=1,
+  cut=10.0,
+  ntb=2, ntp=1, taup=2.0,
+  ntt=3, gamma_ln=5.0,
+  temp0=323.15,
+  ntpr=50, ntwx=50, ntwr=1000,
+  ioutfm=1,
+  ifqnt=1,
+  nmropt=1,
+/
+&qmmm
+  qmmask='(:38@CB,HB2,HB3,CG,OD1,OD2,C1,O1,C2,C3,O3,C4,O4,C5,O5,C6,O6,H3,H4,H5,H11,H12,H1O,H3O,H61,H62,H4O,H6O | :245@CB,HB2,HB3,CG,HG2,HG3,CD,OE1,OE2 | :LIG)',
+  qmcharge=-1,
+  qm_theory='DFTB3',
+  qmcut=10.0,
+  writepdb=1,
+  qm_ewald=1,
+  qmshake=0,
+  scfconv=1.0d-6,
+  itrmax=2000,
+/
+&wt
+  type='END',
+/
+DISANG=DISANG_LIG_reactive.RST
+LISTOUT=POUT_QMMM_RESCUE_WARMUP
+```
+
+Run:
+
+```bash
+FRAME=95
+
+mpirun -np 8 sander.MPI -O \
+  -i templates/mdin/06d_warmup_QMMM_DFTB3_rescue_5000steps.in \
+  -p system_ASJ_LIG.parm7 \
+  -c 06c_test_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -o 06d_warmup_QMMM_DFTB3_rescue_frame${FRAME}.out \
+  -r 06d_warmup_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -x 06d_warmup_QMMM_DFTB3_rescue_frame${FRAME}.nc \
+  -inf 06d_warmup_QMMM_DFTB3_rescue_frame${FRAME}.mdinfo
+```
+
+Check:
+
+```bash
+grep -c "odd number of electrons" 06d_warmup_QMMM_DFTB3_rescue_frame95.out
+grep -c "Convergence could not be achieved" 06d_warmup_QMMM_DFTB3_rescue_frame95.out
+grep -c "vlimit exceeded" 06d_warmup_QMMM_DFTB3_rescue_frame95.out
+grep "NSTEP" -A8 06d_warmup_QMMM_DFTB3_rescue_frame95.out | tail -30
+```
+
+---
+
+## 33. Rescued QM/MM production
+
+<p align="justify">
+The final rescued production used a more conservative QM/MM setup. The timestep was reduced from 0.001 ps to 0.00025 ps, the QM cutoff was reduced to 10.0 Å, the Langevin collision frequency was increased to 5.0 ps⁻¹, and the LIG restraints were kept active during production with <code>nmropt=1</code>. These changes were used to avoid proton/water instability in the QM region and prevent a recurrence of the <code>QM region + cutoff larger than box</code> error.
+</p>
+
+File:
+
+```text
+templates/mdin/06e_prod_QMMM_DFTB3_ASJ_LIG_rescue.in
+```
+
+Content:
+
+```text
+Rescued production QM/MM-DFTB3 with ASJ38 + GLU245 + LIG in QM region
+&cntrl
+  imin=0, irest=1, ntx=5,
+  nstlim=2000000, dt=0.00025,
+  ntc=1, ntf=1,
+  cut=10.0,
+  ntb=2, ntp=1, taup=2.0,
+  ntt=3, gamma_ln=5.0,
+  temp0=323.15,
+  ntpr=100, ntwx=100, ntwr=5000,
+  ioutfm=1,
+  ifqnt=1,
+  nmropt=1,
+/
+&qmmm
+  qmmask='(:38@CB,HB2,HB3,CG,OD1,OD2,C1,O1,C2,C3,O3,C4,O4,C5,O5,C6,O6,H3,H4,H5,H11,H12,H1O,H3O,H61,H62,H4O,H6O | :245@CB,HB2,HB3,CG,HG2,HG3,CD,OE1,OE2 | :LIG)',
+  qmcharge=-1,
+  qm_theory='DFTB3',
+  qmcut=10.0,
+  writepdb=1,
+  qm_ewald=1,
+  qmshake=0,
+  scfconv=1.0d-6,
+  itrmax=2000,
+/
+&wt
+  type='END',
+/
+DISANG=DISANG_LIG_reactive.RST
+LISTOUT=POUT_QMMM_RESCUE_PROD
+```
+
+Run:
+
+```bash
+FRAME=95
+
+mpirun -np 8 sander.MPI -O \
+  -i templates/mdin/06e_prod_QMMM_DFTB3_ASJ_LIG_rescue.in \
+  -p system_ASJ_LIG.parm7 \
+  -c 06d_warmup_QMMM_DFTB3_rescue_frame${FRAME}.rst7 \
+  -o 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame${FRAME}.out \
+  -r 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame${FRAME}.rst7 \
+  -x 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame${FRAME}.nc \
+  -inf 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame${FRAME}.mdinfo
+```
+
+---
+
+## 34. Monitoring the rescued production
+
+Monitor the rescued production with:
+
+```bash
+grep -c "odd number of electrons" 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.out
+grep -c "Convergence could not be achieved" 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.out
+grep -c "vlimit exceeded" 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.out
+grep -c "SANDER BOMB" 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.out
+grep "NSTEP" -A8 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.out | tail -30
+```
+
+Expected values:
+
+```text
+odd number of electrons       = 0
+Convergence failures          = 0
+vlimit exceeded               = 0
+SANDER BOMB                   = 0
+TEMP(K)                       ~323 K
+```
+
+To monitor the reactive geometry while the trajectory is still being written, first copy the NetCDF file:
+
+```bash
+cp 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.nc monitor_06e_tmp.nc
+```
+
+Then create:
+
+```bash
+cat > monitor_06e_geometry.in << 'EOF'
+parm system_ASJ_LIG.parm7
+trajin monitor_06e_tmp.nc
+
+distance d_ASJ_OD2_C2 :38@OD2 :38@C2 out monitor_d_ASJ_OD2_C2.dat
+distance d_LIG_O_C2 :LIG@O :38@C2 out monitor_d_LIG_O_C2.dat
+distance d_LIG_H1_GLU245_OE2 :LIG@H1 :245@OE2 out monitor_d_LIG_H1_GLU245_OE2.dat
+distance d_LIG_O_H1 :LIG@O :LIG@H1 out monitor_d_LIG_O_H1.dat
+distance d_LIG_O_H2 :LIG@O :LIG@H2 out monitor_d_LIG_O_H2.dat
+angle a_OD2_C2_LIG_O :38@OD2 :38@C2 :LIG@O out monitor_a_OD2_C2_LIG_O.dat
+
+run
+quit
+EOF
+
+cpptraj -i monitor_06e_geometry.in
+```
+
+Check the latest values:
+
+```bash
+tail -5 monitor_d_ASJ_OD2_C2.dat
+tail -5 monitor_d_LIG_O_C2.dat
+tail -5 monitor_d_LIG_H1_GLU245_OE2.dat
+tail -5 monitor_d_LIG_O_H1.dat
+tail -5 monitor_d_LIG_O_H2.dat
+tail -5 monitor_a_OD2_C2_LIG_O.dat
+```
+
+Expected stable ranges:
+
+```text
+ASJ38@OD2 -- ASJ38@C2      ~1.4–1.8 Å
+LIG@O     -- ASJ38@C2      ~2.8–3.8 Å
+LIG@H1    -- GLU245@OE2    ~1.5–2.8 Å
+LIG@O     -- LIG@H1        ~1.0 Å
+LIG@O     -- LIG@H2        ~1.0 Å
+OD2-C2-O(LIG)              ~150–180 degrees
+```
+
+---
+
+## 35. Note on the smaller timestep and MM/PBSA
+
+<p align="justify">
+The rescued production uses <code>dt=0.00025</code> ps, whereas the first reaction step used <code>dt=0.001</code> ps. This does not directly affect MM/PBSA calculations because MM/PBSA uses the coordinates of extracted frames, not the timestep itself. However, it changes the physical time represented by each saved frame. For example, if <code>ntwx=100</code>, the first trajectory saves one frame every 0.1 ps, whereas the rescued trajectory saves one frame every 0.025 ps.
+</p>
+
+Therefore, when comparing MM/PBSA results between the first and second reaction steps, the frame interval should be adjusted to sample equivalent physical times:
+
+```text
+First step:
+dt = 0.001 ps
+ntwx = 100
+one frame every 0.1 ps
+
+Second step:
+dt = 0.00025 ps
+ntwx = 100
+one frame every 0.025 ps
+```
+
+To sample the second trajectory every 0.1 ps, use every fourth frame:
+
+```text
+interval=4
+```
+
+or, in `cpptraj`:
+
+```cpptraj
+trajin 06e_prod_QMMM_DFTB3_ASJ_LIG_rescue_frame95.nc 1 last 4
+```
+
+<p align="justify">
+Thus, the smaller timestep does not invalidate MM/PBSA. The important point is to compare equivalent physical sampling windows and to use only stable regions of the trajectory.
+</p>
+
+---
+
 ## References
 
 <p align="justify">
